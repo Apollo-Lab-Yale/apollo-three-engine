@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui, refresh_displays} from "../../js/utils/utils_three.js";
+    import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {transpose} from "../../js/utils/utils_math.js";
+    import {add_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {mul_matrix_scalar} from "../../js/utils/utils_math.js";
+    import {frobenius_norm_matrix, sub_matrix_matrix} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_2d();
+
+    let actions = {
+        reset1: () => {
+            settings.theta1 = 0;
+            settings.tx1 = 0;
+            settings.ty1 = 0;
+            refresh_displays(gui);
+        },
+        reset2: () => {
+            settings.theta2 = 0;
+            settings.tx2 = 0;
+            settings.ty2 = 0;
+            refresh_displays(gui);
+        }
+    }
+
+    let settings = {
+        theta1: 0,
+        tx1:0,
+        ty1:0,
+        theta2: 0,
+        tx2:0,
+        ty2:0,
+        distance0: '0',
+        distance1: '0',
+        distance2: '0'
+    };
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'theta1', -6.28, 6.28).name('Theta1');
+    gui.add(settings, 'tx1', -2, 2).name('tx1');
+    gui.add(settings, 'ty1', -2, 2).name('ty1');
+    gui.add(actions, 'reset1');
+    gui.add(settings, 'theta2', -6.28, 6.28).name('Theta2');
+    gui.add(settings, 'tx2', -2, 2).name('tx2');
+    gui.add(settings, 'ty2', -2, 2).name('ty2');
+    gui.add(actions, 'reset2');
+    gui.add(settings, 'distance0').name('wrong dis').disable();
+    gui.add(settings, 'distance1').name('separated dis').disable();
+    gui.add(settings, 'distance2').name('disp based dis').disable();
+
+    let x = [[1], [0]];
+    let y = [[0], [1]];
+
+    function SE2_distance0(m1, t1, m2, t2) {
+        let mm1 = [ [m1[0][0], m1[0][1], t1[0][0]] , [m1[1][0], m1[1][1], t1[1][0]], [0,0,1]];
+        let mm2 = [ [m2[0][0], m2[0][1], t2[0][0]] , [m2[1][0], m2[1][1], t2[1][0]], [0,0,1]];
+        return frobenius_norm_matrix(sub_matrix_matrix(mm1, mm2));
+    }
+
+    function SE2_distance1(m1, t1, m2, t2) {
+        let m1prime = transpose(m1);
+        let t1prime = mul_matrix_matrix(mul_matrix_scalar(m1prime, -1), t1);
+
+        let m = mul_matrix_matrix(m1prime, m2);
+        // let t = add_matrix_matrix(mul_matrix_matrix(m1prime, t2), t1prime);
+
+        let a1 = Math.atan2(m[1][0], m[0][0]);
+
+        let n = frobenius_norm_matrix(sub_matrix_matrix(t1, t2));
+
+        return Math.abs(a1) + n;
+    }
+
+    function SE2_distance2(m1, t1, m2, t2) {
+        let m1prime = transpose(m1);
+        let t1prime = mul_matrix_matrix(mul_matrix_scalar(m1prime, -1), t1);
+
+        let m = mul_matrix_matrix(m1prime, m2);
+        let t = add_matrix_matrix(mul_matrix_matrix(m1prime, t2), t1prime);
+
+        let a1 = Math.atan2(m[1][0], m[0][0]);
+
+        let p;
+        let q;
+        if(Math.abs(a1) < 0.01) {
+            p = 1.0 - (Math.pow(a1, 2.0)/6.0) +  (Math.pow(a1, 4.0)/120.0);
+            q = a1/2.0 - (Math.pow(a1,3.0)/24.0) + (Math.pow(a1, 5.0)/720.0);
+        } else {
+            p = (Math.sin(a1)/a1);
+            q = (1.0 - Math.cos(a1)) / a1;
+        }
+
+        let det = 1.0 / (Math.pow(p,2) + Math.pow(q, 2));
+        let Ainv = mul_matrix_scalar([ [p, q], [-q, p] ], det);
+        let res = mul_matrix_matrix(Ainv, t);
+
+
+        let a2 = res[0][0];
+        let a3 = res[1][0];
+
+        return Math.sqrt(Math.pow(a1, 2) + Math.pow(a2, 2) + Math.pow(a3, 2));
+    }
+
+    engine.animation_loop(function() {
+
+        let m1 = [[Math.cos(settings.theta1), -Math.sin(settings.theta1)], [Math.sin(settings.theta1), Math.cos(settings.theta1)]];
+        let m2 = [[Math.cos(settings.theta2), -Math.sin(settings.theta2)], [Math.sin(settings.theta2), Math.cos(settings.theta2)]];
+
+        let x1 = add_matrix_matrix(mul_matrix_matrix(m1, x), [settings.tx1,settings.ty1]);
+        let y1 = add_matrix_matrix(mul_matrix_matrix(m1, y), [settings.tx1,settings.ty1]);
+
+        let x2 = add_matrix_matrix(mul_matrix_matrix(m2, x), [settings.tx2,settings.ty2]);
+        let y2 = add_matrix_matrix(mul_matrix_matrix(m2, y), [settings.tx2,settings.ty2]);
+
+        engine.draw_debug_vector([settings.tx1,settings.ty1], x1, 0.035, undefined, 0xff0000);
+        engine.draw_debug_vector([settings.tx1,settings.ty1], y1, 0.035, undefined, 0x00ff00);
+
+        engine.draw_debug_vector([settings.tx2,settings.ty2], x2, 0.035, undefined, 0xaa4444);
+        engine.draw_debug_vector([settings.tx2,settings.ty2], y2, 0.035, undefined, 0x44aa44);
+
+        let t1 = [[settings.tx1],[settings.ty1]];
+        let t2 = [[settings.tx2],[settings.ty2]];
+        let dis0 = SE2_distance0(m1, t1, m2, t2);
+        let dis1 = SE2_distance1(m1, t1, m2, t2);
+        let dis2 = SE2_distance2(m1, t1, m2, t2);
+
+        settings.distance0 = dis0.toString();
+        settings.distance1 = dis1.toString();
+        settings.distance2 = dis2.toString();
+
+        refresh_displays(gui);
+    });
+
+</script>
+</body>
+</html>

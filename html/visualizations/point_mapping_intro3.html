@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {normalized_matrix, add_matrix_matrix, mul_matrix_scalar} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_3d();
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+    engine.mesh_objects[0].visible = false;
+    engine.mesh_object_wireframes[0].visible = true;
+
+    let points = engine.get_local_vertex_positions_of_mesh_object_wireframe(0);
+    let num_points = points.length;
+    let new_points = points.map(point => point);
+    let randoms = points.map(() => Math.random()*1000.0);
+
+    engine.animation_loop(function () {
+        for(let i=0; i<num_points; i++) {
+            let dir = normalized_matrix(points[i]);
+            let scalar = Math.sin((engine.frame_idx + randoms[i]) * 0.02) * 0.1;
+            let new_point = add_matrix_matrix(points[i], mul_matrix_scalar(dir, scalar));
+            new_points[i] = new_point;
+        }
+
+        engine.update_vertex_positions_of_mesh_object_wireframe(0, new_points);
+        new_points.forEach(point => engine.draw_debug_sphere(point, 0.01, 0xeeee00));
+    });
+</script>
+</body>
+</html>

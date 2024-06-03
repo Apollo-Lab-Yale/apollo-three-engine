@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/",
+              "optimization": "https://cdn.jsdelivr.net/npm/optimization-js@1.5.0/+esm"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {ParametricSurfaceSphere} from "../../js/utils/utils_parametric_surfaces.js";
+    import {set_material_color_gradient_based_on_height} from "../../js/utils/utils_three.js";
+    import {ParametricSurfaceLieGroupAndAlgebraUtil} from "../../js/utils/utils_parametric_surfaces.js";
+    import {ParametricSurfaceTorus} from "../../js/utils/utils_parametric_surfaces.js";
+    import {ParametricSurfaceThreeVisualizer} from "../../js/utils/utils_parametric_surfaces.js";
+
+    let engine = ThreeEngine.new_default_3d();
+
+    let p = new ParametricSurfaceTorus(1, 0.8);
+    let parametric_surface = p.spawn_static_parametric_surface(engine.scene, undefined, undefined, 0xaa00ff, 1.0);
+    set_material_color_gradient_based_on_height(parametric_surface);
+    p.draw_static_curves(engine.scene);
+
+    let point = [1.0,1.7,1.9];
+    let res = p.project_onto_surface(point, 0.17, 0.2);
+    console.log(res);
+
+    let pv = new ParametricSurfaceThreeVisualizer(p);
+
+    engine.animation_loop(function() {
+        engine.draw_debug_sphere(point, 0.02);
+        engine.draw_debug_sphere(res[2], 0.02);
+        engine.draw_debug_line(point, res[2]);
+        pv.three_loop_function(engine);
+    });
+
+</script>
+</body>
+</html>

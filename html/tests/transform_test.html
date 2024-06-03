@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {
+        get_x_rotation_so3_matrix,
+        get_y_rotation_so3_matrix,
+        get_z_rotation_so3_matrix
+    } from "../../js/utils/utils_euler_angles.js";
+    import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+    // import {set_object_pose_from_SE3_matrix} from "../../js/utils/utils_transforms.js";
+    // import {set_object_orientation_from_wxyz_quaternion} from "../../js/utils/utils_transforms.js";
+    import {normalized_matrix, unroll_matrix_to_list} from "../../js/utils/utils_math.js";
+    // import {set_object_orientation_from_SO3_matrix} from "../../js/utils/utils_transforms.js";
+    // import {set_object_position_3D} from "../../js/utils/utils_transforms.js";
+    // import {set_object_orientation_from_SO2_matrix} from "../../js/utils/utils_transforms.js";
+    // import {set_object_orientation_from_U1_complex_number} from "../../js/utils/utils_transforms.js";
+    // import {set_object_pose_from_SO3_matrix_and_position} from "../../js/utils/utils_transforms.js";
+    import {set_object_pose_from_wxyz_quaternion_and_position} from "../../js/utils/utils_transforms_obfuscated.js";
+
+    let engine = ThreeEngine.new_default_3d();
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+
+    let settings = {
+        rx:0,
+        ry:0,
+        rz:0,
+        tx:0,
+        ty:0,
+        tz:0
+    }
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'rx', -2, 2);
+    gui.add(settings, 'ry', -2, 2);
+    gui.add(settings, 'rz', -2, 2);
+    gui.add(settings, 'tx', -2, 2);
+    gui.add(settings, 'ty', -2, 2);
+    gui.add(settings, 'tz', -2, 2);
+
+    engine.animation_loop(function() {
+
+        let r1 = get_x_rotation_so3_matrix(settings.rx);
+        let r2 = get_y_rotation_so3_matrix(settings.ry);
+        let r3 = get_z_rotation_so3_matrix(settings.rz);
+
+        let R = mul_matrix_matrix(mul_matrix_matrix(r1, r2), r3);
+
+        let T = [[R[0][0], R[0][1], R[0][2], settings.tx],
+                 [R[1][0], R[1][1], R[1][2], settings.ty],
+                 [R[2][0], R[2][1], R[2][2], settings.tz],
+                 [0,0,0,1]];
+
+        // set_object_pose_from_SE3_matrix(engine, 0, T);
+
+        let a = [[settings.tx], [settings.ty], [settings.tz]];
+        let aa = unroll_matrix_to_list(normalized_matrix(a));
+        let q = [Math.cos(settings.rx),Math.sin(settings.rx)*aa[0],Math.sin(settings.rx)*aa[1],Math.sin(settings.rx)*aa[2]];
+        // set_object_orientation_from_wxyz_quaternion(engine, 0, [Math.cos(settings.rx),Math.sin(settings.rx)*aa[0],Math.sin(settings.rx)*aa[1],Math.sin(settings.rx)*aa[2]]);
+
+
+        // set_object_orientation_from_U1_complex_number(engine, 0, cc);
+        // set_object_position_3D(engine, 0, [settings.tx, settings.ty, settings.tz]);
+
+        set_object_pose_from_wxyz_quaternion_and_position(engine, 0, q, [settings.tx, settings.ty, settings.tz]);
+
+    });
+
+</script>
+</body>
+</html>

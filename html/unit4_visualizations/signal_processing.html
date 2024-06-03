@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {BSpline} from "../../js/utils/utils_splines.js";
+    import {arclength_parameterize_spline_interpolate, get_arclength_components} from "../../js/utils/utils_splines.js";
+    import {vec6_to_so3_and_v, exp_so3_and_v_to_SO3_and_t} from "../../js/utils/utils_exp_and_log_obfuscated.js";
+    import {set_object_pose_from_SO3_matrix_and_position} from "../../js/utils/utils_transforms.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {add_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {unroll_matrix_to_list} from "../../js/utils/utils_math.js";
+
+    function randomNormal(mu = 0, sigma = 1) {
+        let u1 = 0, u2 = 0;
+        // Convert [0,1) to (0,1)
+        while (u1 === 0) u1 = Math.random();
+        while (u2 === 0) u2 = Math.random();
+
+        const R = Math.sqrt(-2.0 * Math.log(u1));
+        const theta = 2.0 * Math.PI * u2;
+        const Z = R * Math.cos(theta);
+        return mu + Z * sigma;
+    }
+
+    function get_random_vector(n) {
+        let out = []
+
+        for(let i = 0; i < n; i++) {
+            out.push( (Math.random() * 2 - 1)*6 );
+        }
+
+        return out;
+    }
+
+    function get_noise_vector(n) {
+        let out = []
+
+        for(let i = 0; i < n; i++) {
+            out.push( (randomNormal(0, 0.03)) );
+        }
+
+        return out;
+    }
+
+    function mean_filter(array) {
+        let out = [];
+
+        for(let i = 0; i < array.length; i++) {
+            let curr = [];
+            for(let j = 0; j < array[i].length; j++) {
+                let a = unroll_matrix_to_list(array[i]);
+                let b = unroll_matrix_to_list(array[Math.max(i-1, 0)]);
+                let c = unroll_matrix_to_list(array[Math.max(i-2, 0)]);
+                let d = unroll_matrix_to_list(array[Math.max(i-3, 0)]);
+                let e = unroll_matrix_to_list(array[Math.max(i-4, 0)]);
+                let f = unroll_matrix_to_list(array[Math.max(i-5, 0)]);
+                let g = unroll_matrix_to_list(array[Math.max(i-6, 0)]);
+                let h = unroll_matrix_to_list(array[Math.max(i-7, 0)]);
+                let val = (0.225*a[j] + 0.125*b[j] + 0.125*c[j] + 0.125*d[j] + 0.125*e[j] + 0.125*f[j] + 0.125*g[j] + 0.025*h[j]);
+                curr.push(  val  );
+            }
+
+            out.push(curr);
+        }
+
+        console.log(out);
+
+        return out;
+    }
+
+    let engine = ThreeEngine.new_default_3d(10, 5, 3);
+    engine.add_suzanne_monkey_as_mesh_object(0xee00ff);
+    engine.add_suzanne_monkey_as_mesh_object(0xffee00);
+    engine.add_suzanne_monkey_as_mesh_object(0x00aaee);
+    // engine.add_suzanne_monkey_as_mesh_object(0x00aaee);
+
+    let actions = {
+        randomize: () => {
+            settings.k = 0;
+            signal_processing();
+        },
+        play: () => {
+            settings.is_playing = true;
+        },
+        stop: () => {
+            settings.is_playing = false;
+        }
+    }
+
+    let settings = {
+        k: 1,
+        is_playing: false,
+        seconds_since_last_update: 0,
+        playback_speed: 0.5,
+    };
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'k', 0, 200, 1);
+    gui.add(actions, 'play');
+    gui.add(actions, 'stop');
+    gui.add(settings, 'playback_speed', 0.0001, 1);
+    gui.add(actions, 'randomize').name('Randomize');
+
+    let control_points = [];
+
+    let original_vectors = [];
+    let original_poses = [];
+    let noisy_vectors = [];
+    let noisy_poses = [];
+    let filtered_vectors = [];
+    let filtered_poses = [];
+
+    function signal_processing() {
+        let control_points = [
+            [0,0,0,0,0,0],
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+            get_random_vector(6),
+        ];
+
+        original_vectors = [];
+        original_poses = [];
+        noisy_vectors = [];
+        noisy_poses = [];
+        filtered_vectors = [];
+        filtered_poses = [];
+
+        let spline = new BSpline( control_points, 3, false );
+        let components = get_arclength_components(spline, spline.control_points.length-1, 100);
+
+        for(let i = 0; i <= 200; i++) {
+            let vec = arclength_parameterize_spline_interpolate(i/200, spline, spline.control_points.length-1, components);
+            original_vectors.push(vec);
+        }
+
+        for(let i = 0; i < original_vectors.length; i++) {
+            let vec6 = original_vectors[i];
+            let [so3, v] = vec6_to_so3_and_v(vec6);
+            let [SO3, t] = exp_so3_and_v_to_SO3_and_t(so3, v);
+            original_poses.push( [SO3, add_matrix_matrix(t, [0, -4, 0])] );
+        }
+
+        for(let i = 0; i < original_vectors.length; i++) {
+            let noise_vector = get_noise_vector(6);
+            let noisy_vector = add_matrix_matrix(original_vectors[i], noise_vector);
+            noisy_vectors.push(noisy_vector);
+            let [so3, v] = vec6_to_so3_and_v(noisy_vector);
+            let [SO3, t] = exp_so3_and_v_to_SO3_and_t(so3, v);
+            noisy_poses.push( [SO3, add_matrix_matrix(t, [0, 0, 0])] );
+        }
+
+        filtered_vectors = mean_filter(noisy_vectors);
+        for(let i = 0; i < filtered_vectors.length; i++) {
+            let [so3, v] = vec6_to_so3_and_v(filtered_vectors[i]);
+            let [SO3, t] = exp_so3_and_v_to_SO3_and_t(so3, v);
+            filtered_poses.push( [SO3, add_matrix_matrix(t, [0, 4, 0])] );
+        }
+    }
+
+    signal_processing();
+
+    engine.animation_loop(function() {
+        if(settings.is_playing) {
+            let u = 0.04;
+            let l = 0.002;
+
+            let rr = (1-settings.playback_speed)*u + settings.playback_speed*l;
+
+            if(settings.seconds_since_last_update > rr) {
+                let num_to_advance = settings.seconds_since_last_update / rr;
+                settings.k += Math.floor(num_to_advance);
+                if(settings.k > 200) { settings.k = 0; }
+                settings.seconds_since_last_update = 0;
+            } else {
+                let dt = engine.get_delta_time_from_last_frame();
+                settings.seconds_since_last_update += dt;
+            }
+            refresh_displays(gui);
+        }
+
+        let p0 = original_poses[settings.k];
+        set_object_pose_from_SO3_matrix_and_position(engine, 0, p0[0], p0[1]);
+        let p1 = noisy_poses[settings.k];
+        set_object_pose_from_SO3_matrix_and_position(engine, 1, p1[0], p1[1]);
+        let p2 = filtered_poses[settings.k];
+        set_object_pose_from_SO3_matrix_and_position(engine, 2, p2[0], p2[1]);
+
+        for(let i = 0; i < original_poses.length-1; i++) {
+            engine.draw_debug_line(original_poses[i][1], original_poses[i+1][1], false, 0.01, 0xee00ff);
+            engine.draw_debug_line(noisy_poses[i][1], noisy_poses[i+1][1], false, 0.01, 0xaabb00);
+            engine.draw_debug_line(filtered_poses[i][1], filtered_poses[i+1][1], false, 0.01, 0x00aaee);
+        }
+
+    });
+
+</script>
+</body>
+</html>

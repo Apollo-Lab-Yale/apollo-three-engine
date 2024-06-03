@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {unroll_matrix_to_list} from "../../js/utils/utils_math.js";
+    import {mul_wxyz_quaternions} from "../../js/utils/utils_quaternion.js";
+    import {frobenius_norm_matrix} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_3d();
+    let gui = get_default_lil_gui();
+
+    let settings = {
+        display_quaternions: true,
+        display_wireframe: true,
+        theta: 0,
+        w: 1,
+        x: 0,
+        y: 0,
+        z: 0,
+        norm: 1
+    }
+
+    let actions = {
+        reset: () => {
+            settings.theta = 0;
+            refresh_displays(gui);
+        }
+    }
+
+    // gui.add(settings, 'display_quaternions').name('display quaternions');
+    // gui.add(settings, 'display_wireframe').name('display wireframe');
+    gui.add(settings, 'theta', -3.14, 3.14);
+    gui.add(settings, 'w', -2, 2).disable();
+    gui.add(settings, 'x', -2, 2).disable();
+    gui.add(settings, 'y', -2, 2).disable();
+    gui.add(settings, 'z', -2, 2).disable();
+    gui.add(settings, 'norm').disable();
+    gui.add(actions, 'reset');
+
+    // engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+    // engine.toggle_mesh_object_wireframe_visibility(0);
+    // engine.toggle_mesh_object_visibility(0);
+
+    // let points = engine.get_local_vertex_positions_of_mesh_object_wireframe(0);
+
+    let qx = [0, 1, 0, 0];
+    let qy = [0, 0, 1, 0];
+    let qz = [0, 0, 0, 1];
+
+    engine.animation_loop(function() {
+        // engine.set_mesh_object_wireframe_visibility(0, settings.display_wireframe);
+
+        settings.w = Math.cos(settings.theta);
+        settings.x = Math.sin(settings.theta);
+
+        let qm = [settings.w, settings.x, settings.y, settings.z];
+        let norm = frobenius_norm_matrix(qm);
+        settings.norm = norm;
+        refresh_displays(gui);
+
+        engine.draw_debug_wxyz_quaternion(qm, 0x9999ff);
+
+        let mapped_x = mul_wxyz_quaternions(qm, qx);
+        let mapped_y = mul_wxyz_quaternions(qm, qy);
+        let mapped_z = mul_wxyz_quaternions(qm, qz);
+
+        engine.draw_debug_wxyz_quaternion(mapped_x, 0xff4444);
+        engine.draw_debug_wxyz_quaternion(mapped_y, 0x44ff44);
+        engine.draw_debug_wxyz_quaternion(mapped_z, 0x4444ff);
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {add_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+
+    let engine = ThreeEngine.new_default_2d();
+
+    let actions = {
+        reset_a: () => {
+            settings.theta_a = 0;
+            settings.tx_a = 0;
+            settings.ty_a = 0;
+            refresh_displays(gui);
+        },
+        reset_b: () => {
+            settings.theta_b = 0;
+            settings.tx_b = 0;
+            settings.ty_b = 0;
+            refresh_displays(gui);
+        },
+    }
+
+    let settings = {
+        theta_a: 0,
+        tx_a:0,
+        ty_a:0,
+        theta_b: 0,
+        tx_b:0,
+        ty_b:0,
+    };
+
+    let gui = get_default_lil_gui();
+    // let folder_a = gui.addFolder('Controls A');
+    // folder_a.add(settings, 'theta_a', -6.28, 6.28).name('theta a');
+    // folder_a.add(settings, 'tx_a', -2, 2).name('tx a');
+    // folder_a.add(settings, 'ty_a', -2, 2).name('ty a');
+    // folder_a.add(actions, 'reset_a').name('Reset A');
+    let folder_b = gui.addFolder('Controls B');
+    folder_b.add(settings, 'theta_b', -6.28, 6.28).name('theta b');
+    folder_b.add(settings, 'tx_b', -2, 2).name('tx b');
+    folder_b.add(settings, 'ty_b', -2, 2).name('ty b');
+    folder_b.add(actions, 'reset_b').name('Reset B');
+
+    engine.animation_loop(function() {
+
+        let ra = [ [ Math.cos(Math.PI/4), -Math.sin(Math.PI/4) ], [Math.sin(Math.PI/4), Math.cos(Math.PI/4)] ];
+        let rb = [ [ Math.cos(settings.theta_b), -Math.sin(settings.theta_b) ], [Math.sin(settings.theta_b), Math.cos(settings.theta_b)] ];
+
+        let ta = [ [1], [2] ];
+        let tb = [ [settings.tx_b], [settings.ty_b] ];
+
+        let rc = mul_matrix_matrix(rb, ra);
+        let tc = add_matrix_matrix(mul_matrix_matrix(rb, ta), tb);
+
+        // engine.draw_debug_vector(ta, add_matrix_matrix(ta, [ [Math.cos(settings.theta_a)], [Math.sin(settings.theta_a)] ]), 0.02, undefined, 0xff0000, 0.2);
+        // engine.draw_debug_vector(ta, add_matrix_matrix(ta, [ [-Math.sin(settings.theta_a)], [Math.cos(settings.theta_a)] ]), 0.02, undefined, 0x00ff00, 0.2);
+
+        // engine.draw_debug_vector(tb, add_matrix_matrix(tb, [ [Math.cos(settings.theta_b)], [Math.sin(settings.theta_b)] ]), 0.02, undefined, 0xff0000, 0.2);
+        // engine.draw_debug_vector(tb, add_matrix_matrix(tb, [ [-Math.sin(settings.theta_b)], [Math.cos(settings.theta_b)] ]), 0.02, undefined, 0x00ff00, 0.2);
+
+        engine.draw_debug_vector(tc, add_matrix_matrix(tc, [ [rc[0][0]], [rc[1][0]] ]), 0.04, undefined, 0xff4444);
+        engine.draw_debug_vector(tc, add_matrix_matrix(tc, [ [rc[0][1]], [rc[1][1]] ]), 0.04, undefined, 0x44ff44);
+
+        engine.draw_debug_vector(ta, add_matrix_matrix(ta, [ [ra[0][0]], [ra[1][0]] ]), 0.03, undefined, 0xff4444, 0.5);
+        engine.draw_debug_vector(ta, add_matrix_matrix(ta, [ [ra[0][1]], [ra[1][1]] ]), 0.03, undefined, 0x44ff44, 0.5);
+    });
+</script>
+</body>
+</html>

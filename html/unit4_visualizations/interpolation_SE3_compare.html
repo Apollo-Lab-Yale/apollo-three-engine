@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {exp_so3_to_SO3, vec3_to_so3_mat, interpolate_poses_SO3_and_position} from "../../js/utils/utils_exp_and_log_obfuscated.js";
+    import {set_object_pose_from_SO3_matrix_and_position} from "../../js/utils/utils_transforms.js";
+    import {identity_matrix} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_3d();
+
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+    engine.toggle_mesh_object_visibility(0);
+    engine.toggle_mesh_object_wireframe_visibility(0);
+
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+    engine.toggle_mesh_object_visibility(1);
+    engine.toggle_mesh_object_wireframe_visibility(1);
+
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+
+    engine.add_suzanne_monkey_as_mesh_object(0xee00ff);
+
+    let settings = {
+        theta11:0,
+        theta12:0,
+        theta13:0,
+        tx1:0,
+        ty1:0,
+        tz1:0,
+        theta21:0,
+        theta22:0,
+        theta23:0,
+        tx2:0,
+        ty2:0,
+        tz2:0,
+        display_wireframe: true,
+        t:0
+    };
+
+    let actions = {
+        reset1: () => {
+            settings.theta11 = 0;
+            settings.theta12 = 0;
+            settings.theta13 = 0;
+            settings.tx1 = 0;
+            settings.ty1 = 0;
+            settings.tz1 = 0;
+            refresh_displays(gui);
+        },
+        reset2: () => {
+            settings.theta21 = 0;
+            settings.theta22 = 0;
+            settings.theta23 = 0;
+            settings.tx2 = 0;
+            settings.ty2 = 0;
+            settings.tz2 = 0;
+            refresh_displays(gui);
+        },
+    };
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'display_wireframe');
+    gui.add(settings, 't', 0, 1);
+
+    let folder1 = gui.addFolder('Transform 1');
+    folder1.add(settings, 'theta11', -3.14, 3.14).name('theta 1');
+    folder1.add(settings, 'theta12', -3.14, 3.14).name('theta 2');
+    folder1.add(settings, 'theta13', -3.14, 3.14).name('theta 3');
+    folder1.add(settings, 'tx1', -3, 3).name('tx');
+    folder1.add(settings, 'ty1', -3, 3).name('ty');
+    folder1.add(settings, 'tz1', -3, 3).name('tz');
+    folder1.add(actions, 'reset1');
+
+    let folder2 = gui.addFolder('Transform 2');
+    folder1.add(settings, 'theta21', -3.14, 3.14).name('theta 1');
+    folder1.add(settings, 'theta22', -3.14, 3.14).name('theta 2');
+    folder1.add(settings, 'theta23', -3.14, 3.14).name('theta 3');
+    folder1.add(settings, 'tx2', -3, 3).name('tx');
+    folder1.add(settings, 'ty2', -3, 3).name('ty');
+    folder1.add(settings, 'tz2', -3, 3).name('tz');
+    folder2.add(actions, 'reset2');
+
+    engine.animation_loop(function() {
+        engine.set_mesh_object_wireframe_visibility(2, settings.display_wireframe);
+        engine.set_mesh_object_wireframe_visibility(3, settings.display_wireframe);
+
+        let SO3_1 = exp_so3_to_SO3(vec3_to_so3_mat([settings.theta11, settings.theta12, settings.theta13]));
+        let t1 = [ [settings.tx1], [settings.ty1], [settings.tz1] ];
+
+        let SO3_2 = exp_so3_to_SO3(vec3_to_so3_mat([settings.theta21, settings.theta22, settings.theta23]));
+        let t2 = [ [settings.tx2], [settings.ty2], [settings.tz2] ];
+
+        set_object_pose_from_SO3_matrix_and_position(engine, 0, SO3_1, t1);
+        set_object_pose_from_SO3_matrix_and_position(engine, 1, SO3_2, t2);
+
+        let int = interpolate_poses_SO3_and_position( [SO3_1, t1], [SO3_2, t2], settings.t );
+        set_object_pose_from_SO3_matrix_and_position(engine, 2, int[0], int[1]);
+
+        let intR = interpolate_poses_SO3_and_position([SO3_1, [[0], [0], [0]]], [SO3_2, [[0], [0], [0]]], settings.t)[0];
+        let intt = interpolate_poses_SO3_and_position([identity_matrix(3), t1], [identity_matrix(3), t2], settings.t)[1];
+
+        set_object_pose_from_SO3_matrix_and_position(engine, 3, intR, intt);
+
+        engine.draw_debug_vector(t1, t2, 0.02, undefined, 0xeeff00);
+    });
+
+</script>
+</body>
+</html>

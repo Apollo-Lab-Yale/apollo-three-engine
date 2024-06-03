@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {set_object_pose_from_SO2_matrix_and_position} from "../../js/utils/utils_transforms.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {interpolate_poses_SO2_and_position} from "../../js/utils/utils_exp_and_log_obfuscated.js";
+
+    let engine = ThreeEngine.new_default_2d();
+
+    engine.add_standard2Dshape_as_mesh_object(0x00eeff);
+    engine.toggle_mesh_object_visibility(0);
+    engine.toggle_mesh_object_wireframe_visibility(0);
+
+    engine.add_standard2Dshape_as_mesh_object(0x00eeff);
+    engine.toggle_mesh_object_visibility(1);
+    engine.toggle_mesh_object_wireframe_visibility(1);
+
+    engine.add_standard2Dshape_as_mesh_object(0x00eeff);
+
+    let settings = {
+        theta1:0,
+        tx1:3,
+        ty1:0,
+        theta2:0,
+        tx2:-3,
+        ty2:0,
+        display_wireframe: true,
+        t:0
+    };
+
+    let actions = {
+        reset1: () => {
+            settings.theta1 = 0;
+            refresh_displays(gui);
+        },
+        reset2: () => {
+            settings.theta2 = 0;
+            refresh_displays(gui);
+        },
+    };
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'display_wireframe');
+    gui.add(settings, 't', 0, 1);
+
+    let folder1 = gui.addFolder('Transform 1');
+    folder1.add(settings, 'theta1', -3.14, 3.14).name('theta');
+    // folder1.add(settings, 'tx1', -2, 2).name('tx');
+    // folder1.add(settings, 'ty1', -2, 2).name('ty');
+    folder1.add(actions, 'reset1');
+
+    let folder2 = gui.addFolder('Transform 2');
+    folder2.add(settings, 'theta2', -3.14, 3.14).name('theta');
+    // folder2.add(settings, 'tx2', -2, 2).name('tx');
+    // folder2.add(settings, 'ty2', -2, 2).name('ty');
+    folder2.add(actions, 'reset2');
+
+    engine.animation_loop(function() {
+        engine.set_mesh_object_wireframe_visibility(2, settings.display_wireframe);
+
+        let SO2_1 = [[Math.cos(settings.theta1), -Math.sin(settings.theta1)], [Math.sin(settings.theta1), Math.cos(settings.theta1)]];
+        let t_1 = [ [settings.tx1], [settings.ty1] ];
+
+        let SO2_2 = [[Math.cos(settings.theta2), -Math.sin(settings.theta2)], [Math.sin(settings.theta2), Math.cos(settings.theta2)]];
+        let t_2 = [ [settings.tx2], [settings.ty2] ];
+
+        set_object_pose_from_SO2_matrix_and_position(engine, 0, SO2_1, t_1);
+        set_object_pose_from_SO2_matrix_and_position(engine, 1, SO2_2, t_2);
+
+        let int = interpolate_poses_SO2_and_position( [SO2_1, [[0],[0]]], [SO2_2, [[0],[0]]], settings.t );
+        set_object_pose_from_SO2_matrix_and_position(engine, 2, int[0], int[1]);
+    });
+
+</script>
+</body>
+</html>

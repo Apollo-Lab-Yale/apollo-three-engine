@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CPSC 487/587</title>
+
+        <script src="../../js/setup/setup_mathjax.js"></script>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+        <script type="importmap">
+            {
+                "imports": {
+                  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                  "three/": "https://unpkg.com/three@0.160.0/"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <script type="module">
+        
+            import { print_var_to_document } from '../../js/utils/utils_general.js'
+
+            var myVariable = 1 + 5;
+
+            let newDiv = document.createElement("div");
+            newDiv.innerHTML = 'hello: ' + myVariable;
+            document.body.appendChild(newDiv);
+
+            let newDiv2 = document.createElement("div");
+            newDiv2.innerHTML = 'goodbye: ' + Math.PI;
+            document.body.appendChild(newDiv2);
+
+            const matrix1 = math.matrix([[1, 2], [3, 8]]);
+            const matrix2 = math.matrix([[2, 0], [1, 2]]);
+
+            // Perform matrix multiplication
+            const result = math.multiply(matrix1, matrix2);
+
+            // let newDiv3 = document.createElement("div");
+            // newDiv3.innerHTML = 'matrix: ' + result;
+            // document.body.appendChild(newDiv3);
+
+            print_var_to_document(result, "matrix: ");
+
+            print_var_to_document(matrix2.get([0,1]));
+
+            var q = new Quaternion(1, 2, 3, 4);
+            print_var_to_document(q);
+
+
+            let v1 = math.matrix([1,2,3]);
+            let v2 = math.matrix([1,2,3]);
+            print_var_to_document(math.multiply(5.0, v2));
+
+        </script>
+    </body>
+</html>

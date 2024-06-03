@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui, refresh_displays} from "../../js/utils/utils_three.js";
+    import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {transpose} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_2d();
+
+    let actions = {
+        reset1: () => {
+            settings.theta1 = 0
+            refresh_displays(gui);
+        },
+        reset2: () => {
+            settings.theta2 = 0
+            refresh_displays(gui);
+        }
+    }
+
+    let settings = {
+        theta1: 0,
+        theta2: 0,
+        distance: '0'
+    };
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'theta1', -6.28, 6.28).name('Theta1');
+    gui.add(actions, 'reset1');
+    gui.add(settings, 'theta2', -6.28, 6.28).name('Theta2');
+    gui.add(actions, 'reset2');
+    gui.add(settings, 'distance').disable();
+
+    let x = [[1], [0]];
+    let y = [[0], [1]];
+
+    engine.animation_loop(function() {
+
+        let m1 = [[Math.cos(settings.theta1), -Math.sin(settings.theta1)], [Math.sin(settings.theta1), Math.cos(settings.theta1)]];
+        let m2 = [[Math.cos(settings.theta2), -Math.sin(settings.theta2)], [Math.sin(settings.theta2), Math.cos(settings.theta2)]];
+
+        let x1 = mul_matrix_matrix(m1, x);
+        let y1 = mul_matrix_matrix(m1, y);
+
+        let x2 = mul_matrix_matrix(m2, x);
+        let y2 = mul_matrix_matrix(m2, y);
+
+        engine.draw_debug_vector([0,0], x1, 0.035, undefined, 0xff0000);
+        engine.draw_debug_vector([0,0], y1, 0.035, undefined, 0x00ff00);
+
+        engine.draw_debug_vector([0,0], x2, 0.035, undefined, 0xaa4444);
+        engine.draw_debug_vector([0,0], y2, 0.035, undefined, 0x44aa44);
+
+        let disp = mul_matrix_matrix(transpose(m1), m2);
+        let l = Math.atan2(disp[1][0], disp[0][0]);
+        let dis = Math.abs(l);
+        settings.distance = dis.toString();
+
+        refresh_displays(gui);
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/",
+              "optimization": "https://cdn.jsdelivr.net/npm/optimization-js@1.5.0/+esm"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import o from "optimization";
+    import {gradient_fd} from "../../js/utils/utils_optimization.js";
+    import {roll_list_into_column_vec_matrix, unroll_matrix_to_list} from "../../js/utils/utils_math.js";
+
+    let fnc = function (v) {
+        var result = 0.0;
+        for (var i = 0; i < v.length; i++){
+            result = result + v[i] * v[i]
+        }
+        return result;
+    };
+
+    let g = function (v) {
+        let gg = gradient_fd(fnc, roll_list_into_column_vec_matrix(v));
+        return unroll_matrix_to_list(gg[1]);
+    }
+
+    var x0 = [1.0, -1.0, 0.5, -0.5, 0.25, -0.25]; // a somewhat random initial vector
+
+    var solution = o.minimize_L_BFGS(fnc, g, x0);
+
+    console.log(o);
+    console.log(solution);
+
+</script>
+</body>
+</html>

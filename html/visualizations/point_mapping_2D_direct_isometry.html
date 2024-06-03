@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <script type="module">
+        import { ThreeEngine, get_default_lil_gui } from "../../js/utils/utils_three.js";
+        import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+        import {refresh_displays} from "../../js/utils/utils_three.js";
+
+        let engine = ThreeEngine.new_default_2d();
+        engine.add_standard2Dshape_as_mesh_object(0x00eeff);
+        // engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+        // engine.toggle_mesh_object_wireframe_visibility(0);
+
+        let settings = {
+            mesh_visible: false,
+            draw_points: true,
+            wireframe_visible: true,
+            point_size: 0.02,
+            tx: 0,
+            ty:0,
+            theta: 0
+        }
+
+        let actions = {
+            reset: function() {
+                settings.tx = 0.0;
+                settings.ty = 0.0;
+                settings.theta = 0.0;
+                refresh_displays(gui);
+            }
+        };
+
+        let gui = get_default_lil_gui();
+        gui.add(settings, 'draw_points').name('Draw Points');
+        gui.add(settings, 'wireframe_visible').name('Draw Wireframe');
+        gui.add(settings, 'mesh_visible').name('Draw Mesh');
+        gui.add(settings, 'point_size', 0.001, 0.03).name('Point Size');
+        let folder = gui.addFolder('Isometry Controls');
+        folder.add(settings, 'tx', -2.0, 2.0).name('Translation x');
+        folder.add(settings, 'ty', -2.0, 2.0).name('Translation y');
+        folder.add(settings, 'theta', -3.14159, 3.14159).name('Rotation angle');
+        folder.add(actions, 'reset').name('Reset');
+
+        let standard_points = engine.get_local_vertex_positions_of_mesh_object(0);
+        let wireframe_points = engine.get_local_vertex_positions_of_mesh_object_wireframe(0);
+
+        engine.animation_loop(function() {
+            let m = [[Math.cos(settings.theta), -Math.sin(settings.theta), settings.tx], [Math.sin(settings.theta), Math.cos(settings.theta), settings.ty], [0.,0.,1.]];
+            // let new_standard_points = standard_points.map(point => mul_matrix_matrix(m, point));
+            let new_standard_points = standard_points.map(point => {
+                let adjusted_point = [[point[0][0]], [point[1][0]], [1.0]];
+                let mapping = mul_matrix_matrix(m, adjusted_point);
+                return [[mapping[0][0]], [mapping[1][0]]];
+            });
+
+            let new_wireframe_points = wireframe_points.map(point => {
+                let adjusted_point = [[point[0][0]], [point[1][0]], [1.0]];
+                let mapping = mul_matrix_matrix(m, adjusted_point);
+                return [[mapping[0][0]], [mapping[1][0]]];
+            });
+
+            // let new_wireframe_points = wireframe_points.map(point => mul_matrix_matrix(m, point));
+
+            engine.update_vertex_positions_of_mesh_object(0, new_standard_points);
+            engine.update_vertex_positions_of_mesh_object_wireframe(0, new_wireframe_points);
+
+            if (settings.draw_points) {
+                new_standard_points.forEach(point => {
+                    engine.draw_debug_sphere(point, settings.point_size, 0xeeee00);
+                });
+            }
+
+            engine.mesh_objects[0].visible = settings.mesh_visible;
+            engine.set_mesh_object_wireframe_visibility(0, settings.wireframe_visible);
+        });
+
+    </script>
+</body>
+</html>

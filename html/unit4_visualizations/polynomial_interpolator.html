@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {TransformGizmoEngine} from "../../js/utils/utils_transform_gizmo.js";
+    import {identity_matrix} from "../../js/utils/utils_math.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {add_matrix_matrix, mul_matrix_scalar} from "../../js/utils/utils_math.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {sub_matrix_matrix} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_2d(undefined, undefined);
+
+    let settings = {
+        t: 0,
+        playback_speed:1.0,
+        gizmos_visible:false,
+        display_summation:false
+    };
+    let is_playing = false;
+    let actions = {
+        play: () => {
+            is_playing = true;
+        },
+        stop: () => {
+            is_playing = false;
+        }
+    }
+    let gui = get_default_lil_gui();
+    gui.add(settings, 't', 0, 1);
+    gui.add(actions, 'play');
+    gui.add(actions, 'stop');
+    gui.add(settings, 'playback_speed', 0.0, 2.0).name('Playback speed');
+    gui.add(settings, 'gizmos_visible').name('Gizmos visible');
+    gui.add(settings, 'display_summation').name('Display sum vectors');
+
+    let tge = new TransformGizmoEngine(engine, 0.1);
+
+    let shift = 3;
+
+    tge.add_gizmo_SO2_matrix_and_position(engine, undefined, [shift-1, 0], 0.15);
+    tge.add_gizmo_SO2_matrix_and_position(engine, undefined, [shift+0, -1], 0.15);
+    tge.add_gizmo_SO2_matrix_and_position(engine, undefined, [shift+1, 0], 0.15);
+    tge.add_gizmo_SO2_matrix_and_position(engine, undefined, [shift+0, 1], 0.15);
+
+    engine.animation_loop(function() {
+        tge.set_visibility_of_all_gizmos(engine, settings.gizmos_visible);
+
+        if(is_playing) {
+            settings.t += settings.playback_speed*0.01;
+            if(settings.t > 1) { settings.t = 0; }
+            refresh_displays(gui);
+        }
+
+
+        engine.draw_debug_grid_plane([shift, 0, 0.01], [1,0,0], [0,1,0], 1, 1);
+
+        let p1 = tge.get_gizmo_pose_as_SO2_matrix_and_position(0)[1];
+        let p2 = tge.get_gizmo_pose_as_SO2_matrix_and_position(1)[1];
+        let p3 = tge.get_gizmo_pose_as_SO2_matrix_and_position(2)[1];
+        let p4 = tge.get_gizmo_pose_as_SO2_matrix_and_position(3)[1];
+
+        engine.draw_debug_vector([shift,0], p1, 0.015, undefined, 0x000000);
+        engine.draw_debug_vector([shift,0], p2, 0.015, undefined, 0x000000);
+        engine.draw_debug_vector([shift,0], p3, 0.015, undefined, 0x000000);
+        engine.draw_debug_vector([shift,0], p4, 0.015, undefined, 0x000000);
+
+        let v1 = sub_matrix_matrix(p1, [shift, 0]);
+        let v2 = sub_matrix_matrix(p2, [shift, 0]);
+        let v3 = sub_matrix_matrix(p3, [shift, 0]);
+        let v4 = sub_matrix_matrix(p4, [shift, 0]);
+
+        let points = [];
+        for(let i = 0; i < 50; i++) {
+            let curr_t = i / 49;
+            let sv1 = mul_matrix_scalar(v1, Math.pow(curr_t, 0));
+            let sv2 = mul_matrix_scalar(v2, Math.pow(curr_t, 1));
+            let sv3 = mul_matrix_scalar(v3, Math.pow(curr_t, 2));
+            let sv4 = mul_matrix_scalar(v4, Math.pow(curr_t, 3));
+
+            let point = add_matrix_matrix(add_matrix_matrix(add_matrix_matrix(sv1, sv2), sv3), sv4);
+            points.push(point);
+        }
+
+        for(let i = 0; i < points.length-1; i++) {
+            let curr_point = points[i];
+            let next_point = points[i+1];
+            engine.draw_debug_line(curr_point, next_point, false, 0.01, 0x555555);
+        }
+
+        let sv1 = mul_matrix_scalar(v1, Math.pow(settings.t, 0));
+        let sv2 = mul_matrix_scalar(v2, Math.pow(settings.t, 1));
+        let sv3 = mul_matrix_scalar(v3, Math.pow(settings.t, 2));
+        let sv4 = mul_matrix_scalar(v4, Math.pow(settings.t, 3));
+        let point = add_matrix_matrix(add_matrix_matrix(add_matrix_matrix(sv1, sv2), sv3), sv4);
+
+        engine.draw_debug_vector([shift,0], add_matrix_matrix([shift,0], sv1), 0.025, undefined, 0xffff00);
+        engine.draw_debug_vector([shift,0], add_matrix_matrix([shift,0], sv2), 0.025, undefined, 0xffff00);
+        engine.draw_debug_vector([shift,0], add_matrix_matrix([shift,0], sv3), 0.025, undefined, 0xffff00);
+        engine.draw_debug_vector([shift,0], add_matrix_matrix([shift,0], sv4), 0.025, undefined, 0xffff00);
+
+        engine.draw_debug_sphere(point, 0.08, 0x00eeff);
+
+
+        let vv1 = sv1;
+        let vv2 = add_matrix_matrix(vv1, sv2);
+        let vv3 = add_matrix_matrix(vv2, sv3);
+        let vv4 = add_matrix_matrix(vv3, sv4);
+
+        if(settings.display_summation) {
+            engine.draw_debug_vector([0, 0], vv1, 0.015, undefined, 0xffff00);
+            engine.draw_debug_vector(vv1, vv2, 0.015, undefined, 0xffff00);
+            engine.draw_debug_vector(vv2, vv3, 0.015, undefined, 0xffff00);
+            engine.draw_debug_vector(vv3, vv4, 0.015, undefined, 0xffff00);
+        }
+
+    });
+
+</script>
+</body>
+</html>

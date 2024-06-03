@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {ParametricSurfaceSphere} from "../../js/utils/utils_parametric_surfaces.js";
+    import {normalized_matrix, cross_product} from "../../js/utils/utils_math.js";
+    import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {add_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {get_surface_exp_x_points} from "../../js/utils/utils_parametric_surfaces.js";
+    import {get_surface_exp_0_points} from "../../js/utils/utils_parametric_surfaces.js";
+    import {get_surface_exp_tx_points} from "../../js/utils/utils_parametric_surfaces.js";
+
+    let engine = ThreeEngine.new_default_3d();
+
+    let p = new ParametricSurfaceSphere();
+    p.spawn_static_parametric_surface(engine.scene);
+
+    // let starting_point = p.raw_parametric_function(0.5, 0.6);
+    // let direction = [[0.5], [0.6], [0.0]];
+
+    // let res = p.rotate_vector_onto_surface(starting_point, direction);
+    // let new_dir = res[0];
+
+    let res = get_surface_exp_x_points(p, 2.5, 0.2);
+    let res2 = get_surface_exp_0_points(p, 2.5, 0.2);
+
+    let res3 = get_surface_exp_tx_points(p, 0.8, res2, res);
+    console.log(res2.length, res3.length);
+
+    engine.animation_loop(function() {
+        // engine.draw_debug_sphere(starting_point, 0.02);
+        // engine.draw_debug_vector(starting_point, add_matrix_matrix(starting_point, direction));
+        // engine.draw_debug_vector(starting_point, add_matrix_matrix(starting_point, new_dir), undefined, undefined, 0x000000);
+
+        res.forEach(point => {
+            engine.draw_debug_sphere(point, 0.02);
+        });
+        res2.forEach(point => {
+            engine.draw_debug_sphere(point, 0.02);
+        });
+        res3.forEach(point => {
+            engine.draw_debug_sphere(point, 0.02, 0x000000);
+        });
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {exp_h1_to_H1_wxyz} from "../../js/utils/utils_exp_and_log.js";
+    import {sandwich_product_wxyz_quaternion_and_point} from "../../js/utils/utils_quaternion.js";
+    import {unroll_matrix_to_list} from "../../js/utils/utils_math.js";
+    import {mul_wxyz_quaternions} from "../../js/utils/utils_quaternion.js";
+    import {exp_so3_to_SO3} from "../../js/utils/utils_exp_and_log.js";
+    import {add_matrix_matrix} from "../../js/utils/utils_math.js";
+    import {mul_matrix_matrix} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_3d(4,3,1);
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+    engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
+
+    engine.toggle_mesh_object_visibility(0);
+    engine.toggle_mesh_object_visibility(1);
+    engine.toggle_mesh_object_wireframe_visibility(0);
+    engine.toggle_mesh_object_wireframe_visibility(1);
+
+    let actions = {
+        reset: () => {
+            settings.theta = 0;
+            settings.phi = 0;
+            settings.r = 1;
+            settings.t = 0;
+            refresh_displays(gui);
+        }
+    }
+
+    let settings = {
+        theta: 0,
+        phi: 0,
+        r: 1,
+        t: 0
+    }
+
+    let gui = get_default_lil_gui();
+    gui.add(settings, 'theta', -3.14, 3.14);
+    gui.add(settings, 'phi', -3.14, 3.14);
+    gui.add(settings, 'r', -6.28, 6.28);
+    gui.add(settings, 't', 0, 1);
+    gui.add(actions, 'reset');
+
+    let points0 = engine.get_local_vertex_positions_of_mesh_object_wireframe(0);
+    let points1 = engine.get_local_vertex_positions_of_mesh_object_wireframe(1);
+
+    engine.animation_loop(function() {
+
+        let a = settings.r * Math.sin(settings.phi) * Math.cos(settings.theta);
+        let b = settings.r * Math.sin(settings.phi) * Math.sin(settings.theta);
+        let c = settings.r * Math.cos(settings.phi);
+
+        engine.draw_debug_vector([0,2,0], [a,2+b,c], 0.03, undefined, 0x00eeff);
+        engine.draw_debug_vector([0,-2,0], [a,b-2,c], 0.03, undefined, 0x00eeff);
+
+        let ai = (settings.r * settings.t) * Math.sin(settings.phi) * Math.cos(settings.theta);
+        let bi = (settings.r * settings.t) * Math.sin(settings.phi) * Math.sin(settings.theta);
+        let ci = (settings.r * settings.t) * Math.cos(settings.phi);
+
+        let q = [0, ai, bi, ci];
+        let exp = exp_h1_to_H1_wxyz(q);
+        let A = [[0, -ci, bi], [ci, 0, -ai], [-bi, ai, 0]];
+        let exp_m = exp_so3_to_SO3(A);
+
+        let new_points0 = []
+        points0.forEach(point => {
+            let p = sandwich_product_wxyz_quaternion_and_point(exp, point);
+            new_points0.push(add_matrix_matrix(p, [0, 2, 0]));
+        });
+        engine.update_vertex_positions_of_mesh_object_wireframe(0, new_points0);
+
+        let new_points1 = []
+        points1.forEach(point => {
+            let p = mul_matrix_matrix(exp_m, point);
+            new_points1.push(add_matrix_matrix(p, [0, -2, 0]));
+        });
+        engine.update_vertex_positions_of_mesh_object_wireframe(1, new_points1);
+    });
+
+</script>
+</body>
+</html>

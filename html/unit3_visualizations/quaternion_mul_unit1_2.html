@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {get_default_lil_gui} from "../../js/utils/utils_three.js";
+    import {refresh_displays} from "../../js/utils/utils_three.js";
+    import {mul_wxyz_quaternions} from "../../js/utils/utils_quaternion.js";
+    import {frobenius_norm_matrix} from "../../js/utils/utils_math.js";
+    import {add_matrix_matrix, cross_product, mul_matrix_scalar} from "../../js/utils/utils_math.js";
+
+    let engine = ThreeEngine.new_default_3d();
+    let gui = get_default_lil_gui('230px');
+
+    let settings = {
+        theta1:0,
+        phi1:0,
+        gamma1:0,
+        w1:1,
+        x1:0,
+        y1:0,
+        z1:0,
+        w2:0,
+        x2:0,
+        y2:0,
+        z2:0,
+        q1_norm: 0,
+        q2_norm: 0,
+        output_str:'[0,0,0,0]',
+        output_norm: 0
+    }
+
+    let actions = {
+        reset1: () => {
+            settings.theta1 = 0;
+            settings.phi1 = 0;
+            settings.gamma1 = 0;
+            refresh_displays(gui);
+        },
+        reset2: () => {
+            settings.w2 = 0;
+            settings.x2 = 0;
+            settings.y2 = 0;
+            settings.z2 = 0;
+            refresh_displays(gui);
+        }
+    }
+
+    let folder = gui.addFolder('quaternion 1');
+    folder.add(settings, 'theta1', -3.14, 3.14);
+    folder.add(settings, 'phi1', -3.14, 3.14);
+    folder.add(settings, 'gamma1', -3.14, 3.14);
+    folder.add(settings, 'w1', -1.0, 1.0).disable();
+    folder.add(settings, 'x1', -1.0, 1.0).disable();
+    folder.add(settings, 'y1', -1.0, 1.0).disable();
+    folder.add(settings, 'z1', -1.0, 1.0).disable();
+    folder.add(settings, 'q1_norm').name('q1 norm').disable();
+    folder.add(actions, 'reset1');
+
+    let folder2 = gui.addFolder('quaternion 2');
+    folder2.add(settings, 'w2', -1.0, 1.0).disable();
+    folder2.add(settings, 'x2', -1.0, 1.0);
+    folder2.add(settings, 'y2', -1.0, 1.0);
+    folder2.add(settings, 'z2', -1.0, 1.0);
+    folder2.add(settings, 'q2_norm').name('q2 norm').disable();
+    folder2.add(actions, 'reset2');
+
+    let folder3 = gui.addFolder('output');
+    folder3.add(settings, 'output_str').disable().name('output');
+    folder3.add(settings, 'output_norm').disable().name('output norm');
+
+    engine.animation_loop(function() {
+        let quat1 = [Math.cos(settings.theta1)*Math.cos(settings.phi1)*Math.cos(settings.gamma1), Math.cos(settings.theta1)*Math.cos(settings.phi1)*Math.sin(settings.gamma1), Math.cos(settings.theta1)*Math.sin(settings.phi1), Math.sin(settings.theta1)];
+        let quat2 = [settings.w2, settings.x2, settings.y2, settings.z2];
+
+        settings.w1 = quat1[0];
+        settings.x1 = quat1[1];
+        settings.y1 = quat1[2];
+        settings.z1 = quat1[3];
+
+        refresh_displays(gui);
+
+        settings.q1_norm = frobenius_norm_matrix(quat1);
+        settings.q2_norm = frobenius_norm_matrix(quat2);
+
+        engine.draw_debug_wxyz_quaternion([settings.w1, settings.x1, settings.y1, settings.z1], 0x00eeff);
+        engine.draw_debug_wxyz_quaternion([settings.w2, settings.x2, settings.y2, settings.z2], 0xeeff00);
+
+        let res = mul_wxyz_quaternions(quat1, quat2);
+
+        engine.draw_debug_wxyz_quaternion(res, 0x000000);
+
+        let formattedString = res.map(num => num.toFixed(2)).join(', ');
+        settings.output_str = formattedString;
+        settings.output_norm = frobenius_norm_matrix(res);
+        refresh_displays(gui);
+
+        let v1 = [[settings.x1], [settings.y1], [settings.z1]];
+        let v2 = [[settings.x2], [settings.y2], [settings.z2]];
+
+        let c = cross_product(v1, v2);
+        let scaled_v1 = mul_matrix_scalar(v1, settings.w2);
+        let scaled_v2 = mul_matrix_scalar(v2, settings.w1);
+
+        let aa = add_matrix_matrix(c, scaled_v1);
+        let bb = add_matrix_matrix(aa, scaled_v2);
+
+        engine.draw_debug_vector([0,0,0], c, 0.02, undefined, 0x339311);
+        engine.draw_debug_vector(c, aa, 0.02, undefined, 0x339311);
+        engine.draw_debug_vector(aa, bb, 0.02, undefined, 0x339311);
+    });
+
+</script>
+</body>
+</html>

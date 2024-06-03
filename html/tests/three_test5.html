@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+
+    // todo: using the parametric version of a circle [r*cos(\theta), r*sin(\theta)], draw a sphere (of radius 0.05, any color opacity you want)
+    // todo: in a 2D ThreeEngine scene such that it revolves around the origin (0,0) at an orbit one unit away.  One revolution around
+    // todo: the center should always take 1 second.  Also, draw a vector rooted at the origin so that it's always pointing at the sphere
+    // todo: as it revolves around the center as well.  All optional parameters for the vector can be left as the default.
+    // todo: note that sin and cosine in javascript can be called using Math.sin() and Math.cos()
+
+    let engine = ThreeEngine.new_default_2d();
+    // let k = 0;
+
+    engine.animation_loop(() => {
+        //let angle = k * Math.PI / 30;
+        //let center_x = Math.cos(angle);
+        //let center_y = Math.sin(angle);
+        engine.draw_debug_sphere([0,0,0], 0.5, 0x00eeff, 0.9);
+        // engine.draw_debug_sphere([center_x, center_y], 0.5, 0x00eeff, 0.9);
+        // engine.draw_debug_vector([0,0], [center_x, center_y]);
+        // k += 1;
+    });
+</script>
+</body>
+</html>

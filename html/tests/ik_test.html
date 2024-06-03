@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {ThreeEngine} from "../../js/utils/utils_three.js";
+    import {XArm7Robot} from "../../js/utils/utils_robot.js";
+    import {set_robot_state} from "../../js/utils/utils_kinematics.js";
+    import {forward_kinematics_SO3_and_position} from "../../js/utils/utils_kinematics.js";
+    import {set_robot_state_from_SO3_and_position_fk_result} from "../../js/utils/utils_kinematics.js";
+    import {IKGoal} from "../../js/utils/utils_kinematics.js";
+    import {inverse_kinematics_SO3_and_position} from "../../js/utils/utils_kinematics.js";
+    import {robot_kinematic_opt} from "../../js/utils/utils_kinematics.js";
+    import {OptGoalPoseMatch} from "../../js/utils/utils_kinematics.js";
+
+    let engine = ThreeEngine.new_default_3d();
+
+    let robot = new XArm7Robot();
+    await robot.spawn_robot(engine);
+
+    let state = [0,0,0,0,0,0,0,0];
+    let fk_res = forward_kinematics_SO3_and_position(robot, state);
+    set_robot_state_from_SO3_and_position_fk_result(engine, robot, fk_res);
+
+    let frame = fk_res[19];
+    frame[1][0][0] += 0.4;
+    frame[1][1][0] += 1.2;
+    let result = robot_kinematic_opt(robot, state, [new OptGoalPoseMatch(frame, 19)]);
+    console.log(result);
+
+    engine.animation_loop(function() {
+        set_robot_state(engine, robot, result);
+    });
+
+</script>
+</body>
+</html>
