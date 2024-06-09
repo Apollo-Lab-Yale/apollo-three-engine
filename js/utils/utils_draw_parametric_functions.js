@@ -40,7 +40,7 @@ export function draw_2d_function(engine, function_to_draw, domain = null, sample
 }
 
 
-function createParameterization(function_to_draw, width_segments, height_segments, domain) {
+function create_parameterization(function_to_draw, width_segments, height_segments, domain) {
     return new ParametricGeometry((u, v, target) => {
         const x = domain[0][0] + u * (domain[0][1] - domain[0][0]);
         const y = domain[1][0] + v * (domain[1][1] - domain[1][0]);
@@ -49,7 +49,7 @@ function createParameterization(function_to_draw, width_segments, height_segment
     }, width_segments, height_segments);
 }
 
-function calculateVisibleDomain(camera, z_dist) {
+function calculate_visible_domain(camera, z_dist) {
     const frustumHeight = Math.abs(2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * z_dist);
     const frustumWidth = Math.abs(frustumHeight * camera.aspect);
     const domainX = [-frustumWidth / 2, frustumWidth / 2];
@@ -66,7 +66,7 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
         // Calculate domain based on the camera frustum
         let curr_domain = domain;
         if (domain == null) {
-            curr_domain = calculateVisibleDomain(engine.camera, z_dist);
+            curr_domain = calculate_visible_domain(engine.camera, z_dist);
         }
 
         // Set default sample number for widthSegments and heightSegments
@@ -85,7 +85,7 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
             mesh.material.dispose();
         }
 
-        const geometry = createParameterization(function_to_draw, curr_width_segments, curr_height_segments, curr_domain);
+        const geometry = create_parameterization(function_to_draw, curr_width_segments, curr_height_segments, curr_domain);
         const material = new THREE.MeshBasicMaterial({
             color: color,
             transparent: true,
