@@ -75,16 +75,18 @@ function create_gridlines(function_to_draw, width_segments, height_segments, dom
         const u = i / width_segments;
         const x = domain[0][0] + u * (domain[0][1] - domain[0][0]);
 
+        if (!Number.isInteger(x)) {
+            continue;
+        }
+
         for (let j = 0; j < height_segments; j++) {
             const v1 = j / height_segments;
             const v2 = (j + 1) / height_segments;
             const y1 = domain[1][0] + v1 * (domain[1][1] - domain[1][0]);
             const y2 = domain[1][0] + v2 * (domain[1][1] - domain[1][0]);
 
-            if (Number.isInteger(x)) {
-                vertices.push(x, function_to_draw(x, y1), y1);
-                vertices.push(x, function_to_draw(x, y2), y2);
-            }
+            vertices.push(x, function_to_draw(x, y1), y1);
+            vertices.push(x, function_to_draw(x, y2), y2);
         }
     }
 
@@ -93,16 +95,18 @@ function create_gridlines(function_to_draw, width_segments, height_segments, dom
         const v = j / height_segments;
         const y = domain[1][0] + v * (domain[1][1] - domain[1][0]);
 
+        if (!Number.isInteger(y)) {
+            continue;
+        }
+
         for (let i = 0; i < width_segments; i++) {
             const u1 = i / width_segments;
             const u2 = (i + 1) / width_segments;
             const x1 = domain[0][0] + u1 * (domain[0][1] - domain[0][0]);
             const x2 = domain[0][0] + u2 * (domain[0][1] - domain[0][0]);
 
-            if (Number.isInteger(y)) {
-                vertices.push(x1, function_to_draw(x1, y), y);
-                vertices.push(x2, function_to_draw(x2, y), y);
-            }
+            vertices.push(x1, function_to_draw(x1, y), y);
+            vertices.push(x2, function_to_draw(x2, y), y);
         }
     }
 
