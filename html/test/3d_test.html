@@ -45,9 +45,8 @@
     gui.add(settings, "a", -5, 5).name("a");
 
     const surface = draw_3d_function(engine, function_to_draw);
-
     engine.animation_loop(function() {
-        surface.update();
+        surface.update(true);
         refresh_displays(gui);
     });
 

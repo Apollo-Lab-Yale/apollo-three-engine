@@ -2,7 +2,11 @@ import * as THREE from 'three';
 import { ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry.js';
 
 export function draw_2d_function(engine, function_to_draw, domain = null, samples = null, color = 0x000000) {
-    function update() {
+    function update(changed = true) {
+        if (!changed) {
+            return;
+        }
+
         // Get viewing space dimensions
         const viewWidth = window.innerWidth;
         const viewHeight = window.innerHeight;
@@ -52,16 +56,89 @@ function create_parameterization(function_to_draw, width_segments, height_segmen
 function calculate_visible_domain(camera, z_dist) {
     const frustumHeight = Math.abs(2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * z_dist);
     const frustumWidth = Math.abs(frustumHeight * camera.aspect);
-    const domainX = [-frustumWidth / 2, frustumWidth / 2];
-    const domainY = [-frustumHeight / 2, frustumHeight / 2];
-    return [domainX, domainY];
+    const largest = Math.round(Math.max(frustumWidth, frustumHeight)) + 1;
+    // Overestimate the viewing volume
+    console.log(largest);
+    return [
+        [-largest, largest],
+        [-largest, largest]
+    ]
+}
+
+// Function to create gridlines
+function create_gridlines(function_to_draw, width_segments, height_segments, domain) {
+    const gridGeometry = new THREE.BufferGeometry();
+    const vertices = [];
+
+    // Vertical contours
+    for (let i = 0; i <= width_segments; i++) {
+        const u = i / width_segments;
+        const x = domain[0][0] + u * (domain[0][1] - domain[0][0]);
+
+        for (let j = 0; j < height_segments; j++) {
+            const v1 = j / height_segments;
+            const v2 = (j + 1) / height_segments;
+            const y1 = domain[1][0] + v1 * (domain[1][1] - domain[1][0]);
+            const y2 = domain[1][0] + v2 * (domain[1][1] - domain[1][0]);
+
+            if (Number.isInteger(x)) {
+                vertices.push(x, function_to_draw(x, y1), y1);
+                vertices.push(x, function_to_draw(x, y2), y2);
+            }
+        }
+    }
+
+    // Horizontal contours
+    for (let j = 0; j <= height_segments; j++) {
+        const v = j / height_segments;
+        const y = domain[1][0] + v * (domain[1][1] - domain[1][0]);
+
+        for (let i = 0; i < width_segments; i++) {
+            const u1 = i / width_segments;
+            const u2 = (i + 1) / width_segments;
+            const x1 = domain[0][0] + u1 * (domain[0][1] - domain[0][0]);
+            const x2 = domain[0][0] + u2 * (domain[0][1] - domain[0][0]);
+
+            if (Number.isInteger(y)) {
+                vertices.push(x1, function_to_draw(x1, y), y);
+                vertices.push(x2, function_to_draw(x2, y), y);
+            }
+        }
+    }
+
+    gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    const gridMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const gridLines = new THREE.LineSegments(gridGeometry, gridMaterial);
+
+    return gridLines;
+}
+
+// Function to compute the distance from the camera to the origin
+function distance_to_origin(camera) {
+    const origin = new THREE.Vector3(0, 0, 0);
+    const cameraPosition = camera.position.clone();
+    const distance = cameraPosition.distanceTo(origin);
+    return distance;
 }
 
 export function draw_3d_function(engine, function_to_draw, width_segments = null, height_segments = null, domain = null, color = 0x00ffff) {
     let mesh;
+    let gridLines;
 
-    function update() {
+    function update(changed = true) {
+        if (!changed) {
+            return;
+        }
+
         let z_dist = engine.camera.position.z;
+
+        // Create a clipping plane at the specified height
+        const clip_height = distance_to_origin(engine.camera) / 2;
+        console.log(clip_height);
+        const clipping_plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), clip_height);
+
+        // Enable clipping in the renderer
+        engine.renderer.clippingPlanes = [clipping_plane];
 
         // Calculate domain based on the camera frustum
         let curr_domain = domain;
@@ -85,15 +162,27 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
             mesh.material.dispose();
         }
 
+        if (gridLines) {
+            engine.scene.remove(gridLines);
+            gridLines.geometry.dispose();
+            gridLines.material.dispose();
+        }
+
         const geometry = create_parameterization(function_to_draw, curr_width_segments, curr_height_segments, curr_domain);
         const material = new THREE.MeshBasicMaterial({
             color: color,
             transparent: true,
-            opacity: 0.5
+            opacity: 0.7,
+            side: THREE.DoubleSide, // Make back faces visible
+            clippingPlanes: [clipping_plane]  // Apply clipping plane
         });
         mesh = new THREE.Mesh(geometry, material);
 
         engine.scene.add(mesh);
+
+        // Create and add gridlines
+        gridLines = create_gridlines(function_to_draw, curr_width_segments, curr_height_segments, curr_domain);
+        engine.scene.add(gridLines);
     }
 
     return {
