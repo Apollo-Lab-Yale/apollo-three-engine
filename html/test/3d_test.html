@@ -28,7 +28,8 @@
     } from "../../js/utils/utils_three.js";
 
     import {
-        draw_3d_function
+        draw_3d_function,
+        distance_to_origin
     } from "../../js/utils/utils_draw_parametric_functions.js"
 
     let engine = ThreeEngine.new_default_3d();
@@ -36,6 +37,11 @@
     let settings = {
         a: 1
     };
+
+    let last_a = null;
+    let last_camera_dist = distance_to_origin(engine.camera);
+    let curr_camera_dist;
+    let mesh_changed = false;
 
     let function_to_draw = (x, y) => {
         return settings.a * (x*x + y*y);
@@ -46,7 +52,12 @@
 
     const surface = draw_3d_function(engine, function_to_draw);
     engine.animation_loop(function() {
-        surface.update(true);
+        curr_camera_dist = distance_to_origin(engine.camera);
+        mesh_changed = (settings.a != last_a) || (Math.abs(curr_camera_dist - last_camera_dist) > 0.01);
+        // console.log(mesh_changed);
+        surface.update(mesh_changed);
+        last_a = settings.a;
+        last_camera_dist = curr_camera_dist;
         refresh_displays(gui);
     });
 

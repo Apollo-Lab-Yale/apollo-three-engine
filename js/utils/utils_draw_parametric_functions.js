@@ -58,15 +58,14 @@ function calculate_visible_domain(camera, z_dist) {
     const frustumWidth = Math.abs(frustumHeight * camera.aspect);
     const largest = Math.round(Math.max(frustumWidth, frustumHeight)) + 1;
     // Overestimate the viewing volume
-    console.log(largest);
+    // console.log(largest);
     return [
         [-largest, largest],
         [-largest, largest]
     ]
 }
 
-// Function to create gridlines
-function create_gridlines(function_to_draw, width_segments, height_segments, domain) {
+function create_gridlines(function_to_draw, width_segments, height_segments, domain, draw_axes_only = false) {
     const gridGeometry = new THREE.BufferGeometry();
     const vertices = [];
 
@@ -75,8 +74,14 @@ function create_gridlines(function_to_draw, width_segments, height_segments, dom
         const u = i / width_segments;
         const x = domain[0][0] + u * (domain[0][1] - domain[0][0]);
 
-        if (!Number.isInteger(x)) {
-            continue;
+        if (!draw_axes_only) {
+            if (x - Math.floor(x) > 0.001 && Math.ceil(x) - x > 0.001) {
+                continue;
+            }
+        } else {
+            if (x !== 0) {
+                continue;
+            }
         }
 
         for (let j = 0; j < height_segments; j++) {
@@ -95,8 +100,14 @@ function create_gridlines(function_to_draw, width_segments, height_segments, dom
         const v = j / height_segments;
         const y = domain[1][0] + v * (domain[1][1] - domain[1][0]);
 
-        if (!Number.isInteger(y)) {
-            continue;
+        if (!draw_axes_only) {
+            if (y - Math.floor(y) > 0.001 && Math.ceil(y) - y > 0.001) {
+                continue;
+            }
+        } else {
+            if (y !== 0) {
+                continue;
+            }
         }
 
         for (let i = 0; i < width_segments; i++) {
@@ -117,8 +128,9 @@ function create_gridlines(function_to_draw, width_segments, height_segments, dom
     return gridLines;
 }
 
+
 // Function to compute the distance from the camera to the origin
-function distance_to_origin(camera) {
+export function distance_to_origin(camera) {
     const origin = new THREE.Vector3(0, 0, 0);
     const cameraPosition = camera.position.clone();
     const distance = cameraPosition.distanceTo(origin);
@@ -138,7 +150,7 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
 
         // Create a clipping plane at the specified height
         const clip_height = distance_to_origin(engine.camera) / 2;
-        console.log(clip_height);
+        // console.log(clip_height);
         const clipping_plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), clip_height);
 
         // Enable clipping in the renderer
@@ -154,10 +166,16 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
         let curr_width_segments = width_segments;
         let curr_height_segments= height_segments;
         if (width_segments == null) {
-            curr_width_segments = 10 * Math.ceil(curr_domain[0][1] - curr_domain[0][0]);
+            curr_width_segments = Math.min(
+                10*Math.ceil(curr_domain[0][1] - curr_domain[0][0]),
+                1000
+            )
         }
         if (height_segments == null) {
-            curr_height_segments = 10 * Math.ceil(curr_domain[0][1] - curr_domain[0][0]);
+            curr_height_segments = Math.min(
+                10*Math.ceil(curr_domain[0][1] - curr_domain[0][0]),
+                1000
+            )
         }
 
         if (mesh) {
@@ -185,7 +203,11 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
         engine.scene.add(mesh);
 
         // Create and add gridlines
-        gridLines = create_gridlines(function_to_draw, curr_width_segments, curr_height_segments, curr_domain);
+        let draw_axis_only = false;
+        if (clip_height > 20) {
+            draw_axis_only = true
+        }
+        gridLines = create_gridlines(function_to_draw, curr_width_segments, curr_height_segments, curr_domain, draw_axis_only);
         engine.scene.add(gridLines);
     }
 
