@@ -323,15 +323,15 @@ export class RobotBaseClass {
 
 // Get robot from robots_dir
 export class RobotFromPreprocessor extends RobotBaseClass {
-    constructor(chainConfig, urdfConfig, meshConfig, robot_dir) {
+    constructor(chain_config, urdf_config, mesh_config, robot_dir) {
         super();
         this.robot_dir = robot_dir;
-        this.chainConfig = chainConfig;
-        this.urdfConfig = urdfConfig;
-        this.meshConfig = meshConfig;
+        this.chain_config = chain_config;
+        this.urdf_config = urdf_config;
+        this.mesh_config = mesh_config;
 
         this.robot_links_mesh_directory_name = this.get_robot_links_mesh_directory_name();
-        this.robot_name = this.get_robot_name();
+        this.robot_name = urdf_config.name;
         this.joints = this.get_robot_joints();
         this.links = this.get_robot_links();
         this.kinematic_hierarchy = this.get_robot_kinematic_hierarchy();
@@ -348,26 +348,20 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         return RobotJointFixed;
     }
 
-    // get_robot_links_mesh_directory_name() {
-    //     return this.chainConfig ? this.chainConfig.mesh_directory || '' : '';
-    // }
     get_robot_links_mesh_directory_name() {
         return this.robot_dir;
     }
 
-    // get_robot_name() {
-    //     return this.chainConfig ? this.chainConfig.robot_name || 'Unnamed Robot' : 'Unnamed Robot';
-    // }
     get_robot_name() {
-        return 'XArm7';
+        return this.robot_name;
     }
 
     get_robot_joints() {
-        if (!this.chainConfig || !this.urdfConfig) return [];
+        if (!this.chain_config || !this.urdf_config) return [];
 
         let dof_idx = 0;
-        return this.chainConfig.joints_in_chain.map(joint => {
-            const joint_urdf_geometry = this.urdfConfig.joints.find(j => j.name === joint.joint_name);
+        return this.chain_config.joints_in_chain.map(joint => {
+            const joint_urdf_geometry = this.urdf_config.joints.find(j => j.name === joint.joint_name);
             if (!joint_urdf_geometry) {
                 console.log(`Failed to find URDF geometry for joint: ${joint.joint_name}`);
                 return null;
@@ -405,12 +399,12 @@ export class RobotFromPreprocessor extends RobotBaseClass {
     }
 
     get_robot_links() {
-        if (!this.chainConfig || !this.urdfConfig) return [];
+        if (!this.chain_config || !this.urdf_config) return [];
 
-        return this.chainConfig.links_in_chain.map(link => {
-            const link_urdf_geometry = this.urdfConfig.links.find(l => l.name === link.name);
+        return this.chain_config.links_in_chain.map(link => {
+            const link_urdf_geometry = this.urdf_config.links.find(l => l.name === link.name);
 
-            const mesh_path = this.meshConfig.link_mesh_relative_paths[link.link_idx];
+            const mesh_path = this.mesh_config.link_mesh_relative_paths[link.link_idx];
 
             if (mesh_path == null) {
                 return new RobotLink(
@@ -436,8 +430,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
     }
 
     get_robot_kinematic_hierarchy() {
-        if (!this.chainConfig) return [];
-        return this.chainConfig.kinematic_hierarchy;
+        if (!this.chain_config) return [];
+        return this.chain_config.kinematic_hierarchy;
     }
 }
 
