@@ -198,6 +198,34 @@ export class RobotBaseClass {
         }
     }
 
+    async spawn_robot_stl(engine) {
+        if (this.already_spawned) {
+            return;
+        }
+
+        this.already_spawned = true;
+        this.link_to_mesh_idxs_mapping = [];
+
+        // Initialize mapping for each link
+        for (let i = 0; i < this.links.length; i++) {
+            this.link_to_mesh_idxs_mapping.push([]);
+        }
+
+        // Iterate over each link and load its mesh if it exists
+        for (const link of this.links) {
+            let link_mesh_name = link.mesh_name;
+            if (link_mesh_name !== '') {
+                let link_idx = link.link_idx;
+                let fp = '../../' + this.robot_links_mesh_directory_name + '/' + link_mesh_name;
+                let idx = await engine.add_stl_mesh_object(fp);
+                let idxs = [idx];
+                idxs.forEach(id => {
+                    this.link_to_mesh_idxs_mapping[link_idx].push(id);
+                });
+            }
+        }
+    }
+
     set_link_mesh_pose_from_SE3_matrix(engine, link_idx, SE3_matrix) {
         let idxs = this.link_to_mesh_idxs_mapping[link_idx];
         idxs.forEach(idx => {
@@ -290,6 +318,126 @@ export class RobotBaseClass {
            total += joint.joint_num_dofs;
         });
         return total;
+    }
+}
+
+// Get robot from robots_dir
+export class RobotFromPreprocessor extends RobotBaseClass {
+    constructor(chainConfig, urdfConfig, meshConfig, robot_dir) {
+        super();
+        this.robot_dir = robot_dir;
+        this.chainConfig = chainConfig;
+        this.urdfConfig = urdfConfig;
+        this.meshConfig = meshConfig;
+
+        this.robot_links_mesh_directory_name = this.get_robot_links_mesh_directory_name();
+        this.robot_name = this.get_robot_name();
+        this.joints = this.get_robot_joints();
+        this.links = this.get_robot_links();
+        this.kinematic_hierarchy = this.get_robot_kinematic_hierarchy();
+        this.already_spawned = false;
+        this.link_to_mesh_idxs_mapping = [];
+    }
+
+    get_joint_type(joint_type) {
+        // Determine joint type
+        if (joint_type === 'Fixed') return RobotJointFixed;
+        if (joint_type === 'Prismatic') return RobotJointPrismatic;
+        if (joint_type === 'Revolute') return RobotJointRevolute;
+        // Default to fixed joint
+        return RobotJointFixed;
+    }
+
+    // get_robot_links_mesh_directory_name() {
+    //     return this.chainConfig ? this.chainConfig.mesh_directory || '' : '';
+    // }
+    get_robot_links_mesh_directory_name() {
+        return this.robot_dir;
+    }
+
+    // get_robot_name() {
+    //     return this.chainConfig ? this.chainConfig.robot_name || 'Unnamed Robot' : 'Unnamed Robot';
+    // }
+    get_robot_name() {
+        return 'XArm7';
+    }
+
+    get_robot_joints() {
+        if (!this.chainConfig || !this.urdfConfig) return [];
+
+        let dof_idx = 0;
+        return this.chainConfig.joints_in_chain.map(joint => {
+            const joint_urdf_geometry = this.urdfConfig.joints.find(j => j.name === joint.joint_name);
+            if (!joint_urdf_geometry) {
+                console.log(`Failed to find URDF geometry for joint: ${joint.joint_name}`);
+                return null;
+            }
+            const JointClass = this.get_joint_type(joint_urdf_geometry.joint_type);
+
+            // Handle different constructors based on joint type
+            if (joint_urdf_geometry.joint_type === 'Fixed') {
+                return new JointClass(
+                    joint.joint_name,
+                    joint.joint_idx,
+                    joint.parent_link_idx,
+                    joint.child_link_idx,
+                    joint_urdf_geometry.origin.xyz,
+                    joint_urdf_geometry.origin.rpy,
+                );
+            } else {
+                const jointInstance = new JointClass(
+                    joint.joint_name,
+                    joint.joint_idx,
+                    joint.parent_link_idx,
+                    joint.child_link_idx,
+                    dof_idx,
+                    [[joint_urdf_geometry.axis.xyz[0]], [joint_urdf_geometry.axis.xyz[1]], [joint_urdf_geometry.axis.xyz[2]]],// joint_urdf_geometry.axis.xyz, //
+                    joint_urdf_geometry.limit.lower,
+                    joint_urdf_geometry.limit.upper,
+                    joint_urdf_geometry.origin.xyz,
+                    joint_urdf_geometry.origin.rpy,
+                    dof_idx
+                );
+                dof_idx++;
+                return jointInstance;
+            }
+        });
+    }
+
+    get_robot_links() {
+        if (!this.chainConfig || !this.urdfConfig) return [];
+
+        return this.chainConfig.links_in_chain.map(link => {
+            const link_urdf_geometry = this.urdfConfig.links.find(l => l.name === link.name);
+
+            const mesh_path = this.meshConfig.link_mesh_relative_paths[link.link_idx];
+
+            if (mesh_path == null) {
+                return new RobotLink(
+                    link.name,
+                    link.link_idx,
+                    link.parent_link_idx,
+                    link.children_joint_idxs,
+                    link.parent_joint_idx,
+                    link.children_link_idxs,
+                );
+            } else {
+                return new RobotLink(
+                    link.name,
+                    link.link_idx,
+                    link.parent_joint_idx,
+                    link.children_joint_idxs,
+                    link.parent_link_idx,
+                    link.children_link_idxs,
+                    mesh_path //`${link.name}.glb`
+                );
+            }
+        });
+    }
+
+    get_robot_kinematic_hierarchy() {
+        if (!this.chainConfig) return [];
+        return this.chainConfig.kinematic_hierarchy;
     }
 }
 

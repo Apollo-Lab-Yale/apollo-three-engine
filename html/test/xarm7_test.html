@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {
+        ThreeEngine,
+        get_default_lil_gui,
+        refresh_displays,
+    } from "../../js/utils/utils_three.js";
+    import {
+        XArm7Robot,
+        B1Robot,
+        RobotFromPreprocessor
+    } from "../../js/utils/utils_robot.js";
+    import {RobotFKSlidersVisualizer} from "../../js/utils/utils_kinematics.js";
+
+    let engine = ThreeEngine.new_default_3d();
+
+    const robot_dir = '../../../apollo_robots_dir/xarm7_with_gripper_and_rail';
+    import chainConfig from '../../../apollo_robots_dir/xarm7_with_gripper_and_rail/chain_module/module.json' assert {type: 'json'};
+    import urdfConfig from '../../../apollo_robots_dir/xarm7_with_gripper_and_rail/urdf_module/module.json' assert {type: 'json'};
+    import meshConfig from '../../../apollo_robots_dir/xarm7_with_gripper_and_rail/mesh_modules/stl_meshes_module/module.json' assert {type: 'json'};
+
+    let robot = new RobotFromPreprocessor(chainConfig, urdfConfig, meshConfig, robot_dir);
+    let robot1 = new B1Robot();
+
+
+    robot.spawn_robot_stl(engine);
+    // robot1.spawn_robot(engine)
+    // console.log(robot.get_robot_kinematic_hierarchy());
+    // console.log(robot.get_robot_name());
+    // console.log(robot.get_robot_links_mesh_directory_name());
+    // console.log(robot.get_robot_joints());
+    // console.log(robot.get_robot_links());
+    //
+    // console.log(robot1.get_robot_kinematic_hierarchy());
+    // console.log(robot1.get_robot_name());
+    // console.log(robot1.get_robot_links_mesh_directory_name());
+    // console.log(robot1.get_robot_joints());
+    // console.log(robot1.get_robot_links());
+
+    let visualizer = new RobotFKSlidersVisualizer(robot);
+    engine.animation_loop(function() {
+       visualizer.three_loop_function(engine);
+    });
+
+
+</script>
+</body>
+</html>
