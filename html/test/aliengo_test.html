@@ -41,7 +41,7 @@
     import meshConfig from '../../../apollo_robots_dir/aliengo/mesh_modules/stl_meshes_module/module.json' assert {type: 'json'};
 
     let robot = new RobotFromPreprocessor(chainConfig, urdfConfig, meshConfig, robot_dir);
-
+    
     robot.spawn_robot_stl(engine);
 
     let visualizer = new RobotFKSlidersVisualizer(robot);

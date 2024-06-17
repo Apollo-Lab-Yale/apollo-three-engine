@@ -344,6 +344,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         if (joint_type === 'Fixed') return RobotJointFixed;
         if (joint_type === 'Prismatic') return RobotJointPrismatic;
         if (joint_type === 'Revolute') return RobotJointRevolute;
+        if (joint_type === 'Continuous') return RobotJointRevolute;
         // Default to fixed joint
         return RobotJointFixed;
     }
@@ -379,6 +380,12 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                     joint_urdf_geometry.origin.rpy,
                 );
             } else {
+                let lower_lim = joint_urdf_geometry.limit.lower;
+                let upper_lim = joint_urdf_geometry.limit.upper;
+                if (joint_urdf_geometry.joint_type === 'Continuous') {
+                    lower_lim = -2 * Math.PI;
+                    upper_lim = 2 * Math.PI;
+                }
                 const jointInstance = new JointClass(
                     joint.joint_name,
                     joint.joint_idx,
@@ -386,8 +393,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                     joint.child_link_idx,
                     dof_idx,
                     [[joint_urdf_geometry.axis.xyz[0]], [joint_urdf_geometry.axis.xyz[1]], [joint_urdf_geometry.axis.xyz[2]]],// joint_urdf_geometry.axis.xyz, //
-                    joint_urdf_geometry.limit.lower,
-                    joint_urdf_geometry.limit.upper,
+                    lower_lim, // joint_urdf_geometry.limit.lower,
+                    upper_lim, // joint_urdf_geometry.limit.upper,
                     joint_urdf_geometry.origin.xyz,
                     joint_urdf_geometry.origin.rpy,
                     dof_idx
