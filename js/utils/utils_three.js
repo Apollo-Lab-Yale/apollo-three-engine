@@ -11,6 +11,8 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {ParametricGeometry} from 'three/examples/jsm/geometries/ParametricGeometry.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+import {ColladaLoader} from 'three/examples/jsm/loaders/ColladaLoader.js';
+
 import {
     add_matrix_matrix,
     cross_product,
@@ -233,6 +235,50 @@ export class ThreeEngine {
             return out_idxs;
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    async add_collada_mesh_object(path) {
+        try {
+            let out_idxs = [];
+            const meshes = await load_collada(path, this.scene);
+            meshes.forEach((mesh) => {
+                z_up_set_object_rotation_from_quaternion(mesh, 1, 0, 0, 0);
+
+                // Store local vertex positions
+                this.mesh_objects_local_vertex_positions.push(
+                    get_local_vertex_positions_of_object(mesh.geometry, mesh.quaternion, true, this.is2D)
+                );
+
+                // Create wireframe for the mesh
+                const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x333333 });
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+                wireframe.visible = false;
+                wireframe.setRotationFromQuaternion(mesh.quaternion);
+
+                // Store local vertex positions for the wireframe
+                this.mesh_object_wireframes_local_vertex_positions.push(
+                    get_local_vertex_positions_of_object(wireframe.geometry, wireframe.quaternion, true, this.is2D)
+                );
+
+                // Add wireframe to the mesh and scene
+                mesh.add(wireframe);
+                this.mesh_object_wireframes.push(wireframe);
+                this.scene.add(wireframe);
+
+                // // Add the mesh to the scene
+                // this.scene.add(mesh);
+
+                // Store the mesh and its index
+                const idx = this.mesh_objects.length;
+                out_idxs.push(idx);
+                this.mesh_objects.push(mesh);
+            });
+
+            return out_idxs;
+        } catch (error) {
+            console.error('Error loading Collada mesh object:', error);
         }
     }
 
@@ -860,6 +906,49 @@ export function load_stl(path, scene, wireframe=false, color=0x00ff00) {
             function (error) {
                 console.error('An error happened', error);
                 reject(error);  // Reject the Promise on error
+            }
+        );
+    });
+}
+
+export function load_collada(path, scene) {
+    return new Promise((resolve, reject) => {
+        const loader = new ColladaLoader();
+        loader.load(
+            path,
+            function(collada) {
+                if (!collada.scene) {
+                    reject('Loaded Collada file does not contain a scene.');
+                    return;
+                }
+
+                console.log('Collada file loaded successfully:', collada);
+
+                const meshes = [];
+                collada.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        meshes.push(child);
+                    }
+                });
+
+                if (meshes.length === 0) {
+                    reject('This Collada file did not have any meshes');
+                }
+
+                // Assuming we want to add all meshes to the scene but resolve only the first
+                meshes.forEach((mesh) => {
+                    mesh.castShadow = true;
+                    // Uncomment if meshes should receive shadows
+                    // mesh.receiveShadow = true;
+                    scene.add(mesh);
+                });
+
+                resolve(meshes);
+            },
+            undefined,
+            function(error) {
+                console.error('An error happened', error);
+                reject(error);
             }
         );
     });

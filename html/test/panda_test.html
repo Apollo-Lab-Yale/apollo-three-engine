@@ -36,15 +36,16 @@
     let engine = ThreeEngine.new_default_3d();
 
     const robot_dir = '../../../apollo_robots_dir/panda';
-    import chainConfig from '../../../apollo_robots_dir/panda/chain_module/module.json' assert {type: 'json'};
-    import urdfConfig from '../../../apollo_robots_dir/panda/urdf_module/module.json' assert {type: 'json'};
-    import meshConfig from '../../../apollo_robots_dir/panda/mesh_modules/stl_meshes_module/module.json' assert {type: 'json'};
+    import chainConfig from '../../../apollo_robots_dir/panda/chain_module/module.json' with {type: 'json'};
+    import urdfConfig from '../../../apollo_robots_dir/panda/urdf_module/module.json' with {type: 'json'};
+    import meshConfig_stl from '../../../apollo_robots_dir/panda/mesh_modules/stl_meshes_module/module.json' with {type: 'json'};
+    import meshConfig from '../../../apollo_robots_dir/panda/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
 
-    let robot = new RobotFromPreprocessor(chainConfig, urdfConfig, meshConfig, robot_dir);
+    let robot = new RobotFromPreprocessor(chainConfig, urdfConfig, meshConfig, meshConfig_stl, robot_dir);
     let robot1 = new B1Robot();
 
 
-    robot.spawn_robot_stl(engine);
+    robot.spawn_robot(engine);
     // robot1.spawn_robot(engine)
     // console.log(robot.get_robot_kinematic_hierarchy());
     // console.log(robot.get_robot_name());
@@ -60,7 +61,8 @@
 
     let visualizer = new RobotFKSlidersVisualizer(robot);
     engine.animation_loop(function() {
-       visualizer.three_loop_function(engine);
+        visualizer.three_loop_function(engine);
+        refresh_displays(visualizer.gui);
     });
 
 

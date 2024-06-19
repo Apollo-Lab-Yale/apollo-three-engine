@@ -519,7 +519,9 @@ export class RobotFKSlidersVisualizer {
         this.settings = {
             display_wireframe:init_display_wireframe,
             display_mesh:init_display_mesh,
-            display_link_mesh_only_with_frame:init_display_link_mesh_only_with_frame
+            display_link_mesh_only_with_frame:init_display_link_mesh_only_with_frame,
+            mesh_source: robot.mesh_config,
+            mesh_source_changed: false,
         };
 
         this.interpolator_settings = {
@@ -538,6 +540,19 @@ export class RobotFKSlidersVisualizer {
         }
 
         let gui = get_default_lil_gui();
+        this.gui = gui;
+
+        // Add dropdown to the GUI
+        // Define options for dropdown
+        let options = {
+            'Original': robot.original_mesh_config,
+            'STL': robot.stl_mesh_config,
+        };
+        this.gui.add(this.settings, 'mesh_source', options).name('Mesh Source').onChange((value) => {
+            this.settings.mesh_source_changed = true;
+            console.log('changed mesh source');
+        });
+
         let a = gui.add(this.settings, 'display_mesh').name('Display Mesh');
         if(freeze_display_mesh) { a.disable(); }
         let b = gui.add(this.settings, 'display_wireframe').name('Display Wireframe');
@@ -638,7 +653,22 @@ export class RobotFKSlidersVisualizer {
         this.gui = gui;
     }
 
+    set_mesh_configs(config1, config2) {
+
+    }
+
     three_loop_function(three_engine) {
+
+        // Added to implment choosing which mesh files to use
+        if (this.settings.mesh_source_changed) {
+            this.robot.despawn_robot(three_engine);
+            this.robot.mesh_config = this.settings.mesh_source;
+            this.robot.links = this.robot.get_robot_links();
+            console.log(this.robot.links);
+            this.robot.spawn_robot(three_engine);
+            this.settings.mesh_source_changed = false;
+        }
+
         if(this.interpolator) {
             if(this.interpolator_settings.is_playing) {
                 this.interpolator_settings.t += this.interpolator_settings.speed * 0.01;

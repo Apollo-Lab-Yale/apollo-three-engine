@@ -190,41 +190,101 @@ export class RobotBaseClass {
             if (link_mesh_name !== '') {
                 let link_idx = link.link_idx;
                 let fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.mesh_name;
-                let idxs = await engine.add_gltf_mesh_object(fp);
+
+                let idxs;
+                if (fp.endsWith('.dae')) {
+                    idxs = await engine.add_collada_mesh_object(fp);
+                } else if (fp.endsWith('.glb' || '.gltf')) {
+                    idxs = await engine.add_gltf_mesh_object(fp);
+                } else if (fp.endsWith('.stl')) {
+                    let idx = await engine.add_stl_mesh_object(fp);
+                    idxs = [idx];
+                }
+                else {
+                    console.error('Invalid file type');
+                }
                 idxs.forEach(idx => {
                     this.link_to_mesh_idxs_mapping[link_idx].push(idx);
                 })
             }
         }
+
     }
 
-    async spawn_robot_stl(engine) {
-        if (this.already_spawned) {
+    async despawn_robot(engine) {
+        if (!this.already_spawned) {
+            console.log('Robot is not spawned.');
             return;
         }
 
-        this.already_spawned = true;
+        // Remove robot-specific meshes from the scene and nullify the mesh object references
+        this.link_to_mesh_idxs_mapping.forEach(mesh_indices => {
+            mesh_indices.forEach(idx => {
+                const mesh = engine.mesh_objects[idx];
+                if (mesh) {
+                    engine.scene.remove(mesh);
+                    engine.mesh_objects[idx] = null; // Nullify the mesh object reference
+                }
+            });
+        });
+
+        // Reset the properties
+        this.already_spawned = false;
         this.link_to_mesh_idxs_mapping = [];
-
-        // Initialize mapping for each link
-        for (let i = 0; i < this.links.length; i++) {
-            this.link_to_mesh_idxs_mapping.push([]);
-        }
-
-        // Iterate over each link and load its mesh if it exists
-        for (const link of this.links) {
-            let link_mesh_name = link.mesh_name;
-            if (link_mesh_name !== '') {
-                let link_idx = link.link_idx;
-                let fp = '../../' + this.robot_links_mesh_directory_name + '/' + link_mesh_name;
-                let idx = await engine.add_stl_mesh_object(fp);
-                let idxs = [idx];
-                idxs.forEach(id => {
-                    this.link_to_mesh_idxs_mapping[link_idx].push(id);
-                });
-            }
-        }
+        console.log('Robot despawned successfully.');
     }
+
+    // async spawn_robot(engine) {
+    //     if(this.already_spawned) { return; }
+    //
+    //     this.already_spawned = true;
+    //
+    //     this.link_to_mesh_idxs_mapping = [];
+    //
+    //     for(let i=0; i < this.links.length; i++) {
+    //         this.link_to_mesh_idxs_mapping.push([]);
+    //     }
+    //
+    //     for (const link of this.links) {
+    //         let link_mesh_name = link.mesh_name;
+    //         if (link_mesh_name !== '') {
+    //             let link_idx = link.link_idx;
+    //             let fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.mesh_name;
+    //             let idxs = await engine.add_gltf_mesh_object(fp);
+    //             idxs.forEach(idx => {
+    //                 this.link_to_mesh_idxs_mapping[link_idx].push(idx);
+    //             })
+    //         }
+    //     }
+    // }
+
+    // async spawn_robot_stl(engine) {
+    //     if (this.already_spawned) {
+    //         return;
+    //     }
+    //
+    //     this.already_spawned = true;
+    //     this.link_to_mesh_idxs_mapping = [];
+    //
+    //     // Initialize mapping for each link
+    //     for (let i = 0; i < this.links.length; i++) {
+    //         this.link_to_mesh_idxs_mapping.push([]);
+    //     }
+    //
+    //     // Iterate over each link and load its mesh if it exists
+    //     for (const link of this.links) {
+    //         let link_mesh_name = link.mesh_name;
+    //         if (link_mesh_name !== '') {
+    //             let link_idx = link.link_idx;
+    //             let fp = '../../' + this.robot_links_mesh_directory_name + '/' + link_mesh_name;
+    //             let idx = await engine.add_stl_mesh_object(fp);
+    //             let idxs = [idx];
+    //             idxs.forEach(id => {
+    //                 this.link_to_mesh_idxs_mapping[link_idx].push(id);
+    //             });
+    //         }
+    //     }
+    // }
 
     set_link_mesh_pose_from_SE3_matrix(engine, link_idx, SE3_matrix) {
         let idxs = this.link_to_mesh_idxs_mapping[link_idx];
@@ -323,12 +383,14 @@ export class RobotBaseClass {
 
 // Get robot from robots_dir
 export class RobotFromPreprocessor extends RobotBaseClass {
-    constructor(chain_config, urdf_config, mesh_config, robot_dir) {
+    constructor(chain_config, urdf_config, original_mesh_config, stl_mesh_config, robot_dir) {
         super();
         this.robot_dir = robot_dir;
         this.chain_config = chain_config;
         this.urdf_config = urdf_config;
-        this.mesh_config = mesh_config;
+        this.mesh_config = original_mesh_config;
+        this.stl_mesh_config = stl_mesh_config;
+        this.original_mesh_config = original_mesh_config;
 
         this.robot_links_mesh_directory_name = this.get_robot_links_mesh_directory_name();
         this.robot_name = urdf_config.name;
@@ -434,6 +496,11 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                 );
             }
         });
+    }
+
+    refresh_robot_links() {
+        this.robot_links = this.get_robot_links();
+        console.log('Robot links updated:', this.robot_links);
     }
 
     get_robot_kinematic_hierarchy() {
