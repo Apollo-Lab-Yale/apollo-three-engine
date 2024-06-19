@@ -147,6 +147,7 @@ export class RobotLink {
         this.children_link_idxs = children_link_idxs;
         this.mesh_name = mesh_name;
         this.convex_hull_mesh_name = convex_hull_mesh_name;
+        this.mesh_config = null;
     }
 }
 
@@ -199,18 +200,26 @@ export class RobotBaseClass {
             if (link_mesh_name !== '') {
                 link_idx = link.link_idx;
                 fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.mesh_name;
-
-                let idxs;
-                if (fp.endsWith('.dae')) {
+                let idxs = [];
+                if (typeof link_mesh_name === 'object') {
+                    if (link_mesh_name.length === 0) {
+                    } else {
+                        // We assume the link has multiple mesh files as stls
+                        const fps = this.mesh_config.link_mesh_relative_paths[link.link_idx];
+                        for (const file of fps) {
+                            let idx = await engine.add_stl_mesh_object('../../' + this.robot_links_mesh_directory_name + '/' + file);
+                            idxs.push(idx);
+                        }
+                    }
+                } else if (fp.endsWith('.dae')) {
                     idxs = await engine.add_collada_mesh_object(fp);
                 } else if (fp.endsWith('.glb' || '.gltf')) {
                     idxs = await engine.add_gltf_mesh_object(fp);
                 } else if (fp.endsWith('.stl')) {
                     let idx = await engine.add_stl_mesh_object(fp);
                     idxs = [idx];
-                }
-                else {
-                    console.error('Invalid file type');
+                } else { // We assume the link has multiple mesh files as stls
+                    console.error('Wrong file type');
                 }
                 idxs.forEach(idx => {
                     this.link_to_mesh_idxs_mapping[link_idx].push(idx);
@@ -219,13 +228,12 @@ export class RobotBaseClass {
                 // Next load the convex hull mesh
                 let convex_hull_mesh_name = link.convex_hull_mesh_name;
                 let hull_idxs;
-                if (convex_hull_mesh_name !== '') {
+                if (convex_hull_mesh_name !== '' && convex_hull_mesh_name !== null) {
                     let hull_fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.convex_hull_mesh_name;
                     if (hull_fp.endsWith('.stl')) {
                         let hull_idx = await engine.add_stl_mesh_object(hull_fp, 0x00ffff, 0.5, true);
                         hull_idxs = [hull_idx];
-                    }
-                    else {
+                    } else {
                         console.error('Invalid hull mesh file type: ', hull_fp, ' should have ended with stl');
                     }
                     hull_idxs.forEach(idx => {
@@ -448,6 +456,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         original_mesh_config,
         stl_mesh_config,
         convex_hull_mesh_config,
+        convex_decomposition_mesh_config,
         robot_dir
     ) {
         super();
@@ -458,6 +467,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         this.stl_mesh_config = stl_mesh_config;
         this.original_mesh_config = original_mesh_config;
         this.convex_hull_mesh_config = convex_hull_mesh_config;
+        this.convex_decomposition_mesh_config = convex_decomposition_mesh_config;
 
         this.robot_links_mesh_directory_name = this.get_robot_links_mesh_directory_name();
         this.robot_name = urdf_config.name;
@@ -541,10 +551,10 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         return this.chain_config.links_in_chain.map(link => {
             const link_urdf_geometry = this.urdf_config.links.find(l => l.name === link.name);
 
-            const mesh_path = this.mesh_config.link_mesh_relative_paths[link.link_idx];
+            let mesh_path = this.mesh_config.link_mesh_relative_paths[link.link_idx];
             const convex_hull_mesh_path = this.convex_hull_mesh_config.link_mesh_relative_paths[link.link_idx];
 
-            if (mesh_path == null) {
+            if (mesh_path === null) {
                 return new RobotLink(
                     link.name,
                     link.link_idx,

@@ -41,6 +41,8 @@
     import meshConfig_stl from '../../../apollo_robots_dir/ur5/mesh_modules/stl_meshes_module/module.json' with {type: 'json'};
     import meshConfig from '../../../apollo_robots_dir/ur5/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
     import meshConfig_hull from '../../../apollo_robots_dir/ur5/mesh_modules/convex_hull_meshes_module/module.json' with {type: 'json'};
+    import meshConfig_convex_decomposition from '../../../apollo_robots_dir/ur5/mesh_modules/convex_decomposition_meshes_module/module.json' with {type: 'json'};
+
 
 
     let robot = new RobotFromPreprocessor(
@@ -49,6 +51,7 @@
         meshConfig,
         meshConfig_stl,
         meshConfig_hull,
+        meshConfig_convex_decomposition,
         robot_dir
     );
     let robot1 = new B1Robot();
@@ -60,7 +63,6 @@
     // console.log(robot.get_robot_name());
     // console.log(robot.get_robot_links_mesh_directory_name());
     // console.log(robot.get_robot_joints());
-    // console.log(robot.get_robot_links());
     //
     // console.log(robot1.get_robot_kinematic_hierarchy());
     // console.log(robot1.get_robot_name());

@@ -42,6 +42,9 @@
     import meshConfig from '../../../apollo_robots_dir/aliengo/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
     import meshConfig_hull from '../../../apollo_robots_dir/aliengo/mesh_modules/convex_hull_meshes_module/module.json' with {type: 'json'};
 
+    import meshConfig_convex_decomposition from '../../../apollo_robots_dir/aliengo/mesh_modules/convex_decomposition_meshes_module/module.json' with {type: 'json'};
+
+
 
     let robot = new RobotFromPreprocessor(
         chainConfig,
@@ -49,6 +52,7 @@
         meshConfig,
         meshConfig_stl,
         meshConfig_hull,
+        meshConfig_convex_decomposition,
         robot_dir
     );
     robot.spawn_robot(engine);

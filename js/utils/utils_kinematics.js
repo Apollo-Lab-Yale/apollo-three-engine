@@ -548,6 +548,7 @@ export class RobotFKSlidersVisualizer {
         let options = {
             'Original': robot.original_mesh_config,
             'STL': robot.stl_mesh_config,
+            'Convex Decomposition': robot.convex_decomposition_mesh_config
         };
         this.gui.add(this.settings, 'mesh_source', options).name('Mesh Source').onChange((value) => {
             this.settings.mesh_source_changed = true;
