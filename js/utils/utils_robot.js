@@ -253,9 +253,21 @@ export class RobotBaseClass {
             });
         });
 
+        // Remove robot-specific convex hull meshes from the scene and nullify the mesh object references
+        this.link_to_convex_hull_mesh_idxs_mapping.forEach(mesh_indices => {
+            mesh_indices.forEach(idx => {
+                const mesh = engine.mesh_objects[idx];
+                if (mesh) {
+                    engine.scene.remove(mesh);
+                    engine.mesh_objects[idx] = null; // Nullify the mesh object reference
+                }
+            });
+        });
+
         // Reset the properties
         this.already_spawned = false;
         this.link_to_mesh_idxs_mapping = [];
+        this.link_to_convex_hull_mesh_idxs_mapping = [];
         console.log('Robot despawned successfully.');
     }
 
