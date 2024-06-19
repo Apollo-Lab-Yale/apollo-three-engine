@@ -40,8 +40,16 @@
     import urdfConfig from '../../../apollo_robots_dir/panda/urdf_module/module.json' with {type: 'json'};
     import meshConfig_stl from '../../../apollo_robots_dir/panda/mesh_modules/stl_meshes_module/module.json' with {type: 'json'};
     import meshConfig from '../../../apollo_robots_dir/panda/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
+    import meshConfig_hull from '../../../apollo_robots_dir/panda/mesh_modules/convex_hull_meshes_module/module.json' with {type: 'json'};
 
-    let robot = new RobotFromPreprocessor(chainConfig, urdfConfig, meshConfig, meshConfig_stl, robot_dir);
+    let robot = new RobotFromPreprocessor(
+        chainConfig,
+        urdfConfig,
+        meshConfig,
+        meshConfig_stl,
+        meshConfig_hull,
+        robot_dir
+    );
     let robot1 = new B1Robot();
 
 
@@ -51,7 +59,7 @@
     // console.log(robot.get_robot_name());
     // console.log(robot.get_robot_links_mesh_directory_name());
     // console.log(robot.get_robot_joints());
-    // console.log(robot.get_robot_links());
+    console.log(robot.get_robot_links());
     //
     // console.log(robot1.get_robot_kinematic_hierarchy());
     // console.log(robot1.get_robot_name());

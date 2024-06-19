@@ -180,9 +180,9 @@ export class ThreeEngine {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    async add_stl_mesh_object(path) {
+    async add_stl_mesh_object(path, color= 0x00ff00, opacity = 1.0, transparent = false) {
         try {
-            const mesh = await load_stl(path, this.scene);
+            const mesh = await load_stl(path, this.scene, false, color, opacity, transparent);
             // mesh.setRotationFromQuaternion(new THREE.Quaternion());
             z_up_set_object_rotation_from_quaternion(mesh, 1,0,0,0);
             this.mesh_objects_local_vertex_positions.push(get_local_vertex_positions_of_object(mesh.geometry, mesh.quaternion,true, this.is2D));
@@ -886,7 +886,7 @@ export function load_gltf_safely(path, scene) {
     });
 }
 
-export function load_stl(path, scene, wireframe=false, color=0x00ff00) {
+export function load_stl(path, scene, wireframe=false, color=0x00ff00, opacity = 1.0, transparent = false) {
     return new Promise((resolve, reject) => {
         const loader = new STLLoader();
         loader.load(
@@ -896,8 +896,8 @@ export function load_stl(path, scene, wireframe=false, color=0x00ff00) {
                 const mesh = new THREE.Mesh(geometry, material);
                 // mesh.receiveShadow = true;
                 mesh.castShadow = true;
-                // mesh.material.transparent = true;
-                // mesh.material.opacity = 0.8;
+                mesh.material.transparent = transparent;
+                mesh.material.opacity = opacity;
                 scene.add(mesh);
 
                 resolve(mesh);  // Resolve the Promise with the loaded mesh

@@ -138,7 +138,7 @@ export class RobotJointFloating extends RobotJointBaseClass {
 }
 
 export class RobotLink {
-    constructor(link_name, link_idx, parent_joint_idx, children_joint_idxs, parent_link_idx, children_link_idxs, mesh_name='') {
+    constructor(link_name, link_idx, parent_joint_idx, children_joint_idxs, parent_link_idx, children_link_idxs, mesh_name='', convex_hull_mesh_name = '') {
         this.link_name = link_name;
         this.link_idx = link_idx;
         this.parent_joint_idx = parent_joint_idx;
@@ -146,6 +146,7 @@ export class RobotLink {
         this.parent_link_idx = parent_link_idx;
         this.children_link_idxs = children_link_idxs;
         this.mesh_name = mesh_name;
+        this.convex_hull_mesh_name = convex_hull_mesh_name;
     }
 }
 
@@ -162,6 +163,7 @@ export class RobotBaseClass {
         this.kinematic_hierarchy = this.get_robot_kinematic_hierarchy();
         this.already_spawned = false;
         this.link_to_mesh_idxs_mapping = [];
+        this.link_to_convex_hull_mesh_idxs_mapping = [];
 
         this.link_to_kinematic_hierarchy_order_idx = [];
         this.links.forEach( () => { this.link_to_kinematic_hierarchy_order_idx.push(0); } );
@@ -185,11 +187,18 @@ export class RobotBaseClass {
             this.link_to_mesh_idxs_mapping.push([]);
         }
 
+        for(let i=0; i < this.links.length; i++) {
+            this.link_to_convex_hull_mesh_idxs_mapping.push([]);
+        }
+
         for (const link of this.links) {
+            // First load the link mesh
             let link_mesh_name = link.mesh_name;
+            let link_idx;
+            let fp;
             if (link_mesh_name !== '') {
-                let link_idx = link.link_idx;
-                let fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.mesh_name;
+                link_idx = link.link_idx;
+                fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.mesh_name;
 
                 let idxs;
                 if (fp.endsWith('.dae')) {
@@ -206,9 +215,25 @@ export class RobotBaseClass {
                 idxs.forEach(idx => {
                     this.link_to_mesh_idxs_mapping[link_idx].push(idx);
                 })
+
+                // Next load the convex hull mesh
+                let convex_hull_mesh_name = link.convex_hull_mesh_name;
+                let hull_idxs;
+                if (convex_hull_mesh_name !== '') {
+                    let hull_fp = '../../' + this.robot_links_mesh_directory_name + '/' + link.convex_hull_mesh_name;
+                    if (hull_fp.endsWith('.stl')) {
+                        let hull_idx = await engine.add_stl_mesh_object(hull_fp, 0x00ffff, 0.5, true);
+                        hull_idxs = [hull_idx];
+                    }
+                    else {
+                        console.error('Invalid hull mesh file type: ', hull_fp, ' should have ended with stl');
+                    }
+                    hull_idxs.forEach(idx => {
+                        this.link_to_convex_hull_mesh_idxs_mapping[link_idx].push(idx);
+                    })
+                }
             }
         }
-
     }
 
     async despawn_robot(engine) {
@@ -286,6 +311,13 @@ export class RobotBaseClass {
     //     }
     // }
 
+    set_hull_mesh_pose_from_SE3_matrix(engine, link_idx, SE3_matrix) {
+        let idxs = this.link_to_convex_hull_mesh_idxs_mapping[link_idx];
+        idxs.forEach(idx => {
+            set_object_pose_from_SE3_matrix(engine, idx, SE3_matrix);
+        });
+    }
+
     set_link_mesh_pose_from_SE3_matrix(engine, link_idx, SE3_matrix) {
         let idxs = this.link_to_mesh_idxs_mapping[link_idx];
         idxs.forEach(idx => {
@@ -344,6 +376,21 @@ export class RobotBaseClass {
         });
     }
 
+    set_link_convex_hull_mesh_visibility(engine, link_idx, visible) {
+        let link_idxs = this.link_to_convex_hull_mesh_idxs_mapping[link_idx];
+        link_idxs.forEach(idx => {
+            engine.mesh_objects[idx].visible = visible;
+        });
+    }
+
+    set_convex_hull_mesh_visibility(engine, visible) {
+        this.link_to_convex_hull_mesh_idxs_mapping.forEach(link_idxs => {
+            link_idxs.forEach(idx => {
+                engine.mesh_objects[idx].visible = visible;
+            });
+        });
+    }
+
     get_robot_links_mesh_directory_name() {
         throw new Error("Method 'get_robot_links_mesh_directory_name()' must be implemented in the derived class.");
     }
@@ -383,7 +430,14 @@ export class RobotBaseClass {
 
 // Get robot from robots_dir
 export class RobotFromPreprocessor extends RobotBaseClass {
-    constructor(chain_config, urdf_config, original_mesh_config, stl_mesh_config, robot_dir) {
+    constructor(
+        chain_config,
+        urdf_config,
+        original_mesh_config,
+        stl_mesh_config,
+        convex_hull_mesh_config,
+        robot_dir
+    ) {
         super();
         this.robot_dir = robot_dir;
         this.chain_config = chain_config;
@@ -391,6 +445,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         this.mesh_config = original_mesh_config;
         this.stl_mesh_config = stl_mesh_config;
         this.original_mesh_config = original_mesh_config;
+        this.convex_hull_mesh_config = convex_hull_mesh_config;
 
         this.robot_links_mesh_directory_name = this.get_robot_links_mesh_directory_name();
         this.robot_name = urdf_config.name;
@@ -399,6 +454,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         this.kinematic_hierarchy = this.get_robot_kinematic_hierarchy();
         this.already_spawned = false;
         this.link_to_mesh_idxs_mapping = [];
+        this.link_to_convex_hull_mesh_idxs_mapping = [];
     }
 
     get_joint_type(joint_type) {
@@ -474,6 +530,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
             const link_urdf_geometry = this.urdf_config.links.find(l => l.name === link.name);
 
             const mesh_path = this.mesh_config.link_mesh_relative_paths[link.link_idx];
+            const convex_hull_mesh_path = this.convex_hull_mesh_config.link_mesh_relative_paths[link.link_idx];
 
             if (mesh_path == null) {
                 return new RobotLink(
@@ -492,7 +549,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                     link.children_joint_idxs,
                     link.parent_link_idx,
                     link.children_link_idxs,
-                    mesh_path //`${link.name}.glb`
+                    mesh_path, //`${link.name}.glb`,
+                    convex_hull_mesh_path
                 );
             }
         });

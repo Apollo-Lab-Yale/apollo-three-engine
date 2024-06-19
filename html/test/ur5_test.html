@@ -40,8 +40,17 @@
     import urdfConfig from '../../../apollo_robots_dir/ur5/urdf_module/module.json' with {type: 'json'};
     import meshConfig_stl from '../../../apollo_robots_dir/ur5/mesh_modules/stl_meshes_module/module.json' with {type: 'json'};
     import meshConfig from '../../../apollo_robots_dir/ur5/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
+    import meshConfig_hull from '../../../apollo_robots_dir/ur5/mesh_modules/convex_hull_meshes_module/module.json' with {type: 'json'};
 
-    let robot = new RobotFromPreprocessor(chainConfig, urdfConfig, meshConfig, meshConfig_stl, robot_dir);
+
+    let robot = new RobotFromPreprocessor(
+        chainConfig,
+        urdfConfig,
+        meshConfig,
+        meshConfig_stl,
+        meshConfig_hull,
+        robot_dir
+    );
     let robot1 = new B1Robot();
 
 

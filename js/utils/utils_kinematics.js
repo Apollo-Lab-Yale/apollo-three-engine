@@ -277,6 +277,7 @@ export function set_robot_state(engine, robot, state) {
 export function set_robot_state_from_SE3_fk_result(engine, robot, fk_result) {
     for(let i=0; i<fk_result.length; i++) {
         robot.set_link_mesh_pose_from_SE3_matrix(engine, i, fk_result[i]);
+        robot.set_hull_mesh_pose_from_SE3_matrix(engine, i, fk_result[i]);
     }
 }
 
@@ -633,6 +634,14 @@ export class RobotFKSlidersVisualizer {
             links_folder.add(this.settings, 'link' + i.toString() + 'frame').name('link ' + i.toString() + ': ' + robot.links[i].link_name);
         }
 
+        let convex_hull_folder = gui.addFolder('Convex Hulls');
+        for(let i=0; i < robot.links.length; i++) {
+            let val = false;
+            if(init_all_links_selected) { val = true; }
+            this.settings['link' + i.toString() + 'hull'] = val;
+            convex_hull_folder.add(this.settings, 'link' + i.toString() + 'hull').name(robot.links[i].link_name + ' hull');
+        }
+
         this.actions['select_all'] = () => {
             for(let i=0; i < robot.links.length; i++) {
                 this.settings['link' + i.toString() + 'frame'] = true;
@@ -647,8 +656,25 @@ export class RobotFKSlidersVisualizer {
             refresh_displays(gui);
         };
 
+        this.actions['select_all_hulls'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'hull'] = true;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['deselect_all_hulls'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'hull'] = false;
+            }
+            refresh_displays(gui);
+        };
+
         actions_folder.add(this.actions, 'select_all').name('Select All Frames');
         actions_folder.add(this.actions, 'deselect_all').name('Deselect All Frames');
+
+        actions_folder.add(this.actions, 'select_all_hulls').name('Select All Convex Hulls');
+        actions_folder.add(this.actions, 'deselect_all_hulls').name('Deselect All Convex Hulls');
 
         this.gui = gui;
     }
@@ -692,6 +718,7 @@ export class RobotFKSlidersVisualizer {
         // if(!this.settings.display_link_mesh_only_with_frame) {
         this.robot.set_mesh_visibility(three_engine, this.settings.display_mesh);
         // }
+        this.robot.set_convex_hull_mesh_visibility(three_engine, false)
 
         // let fk = forward_kinematics_SE3(this.robot, state);
         // let fk = forward_kinematics_SO3_and_position(this.robot, state);
@@ -758,6 +785,10 @@ export class RobotFKSlidersVisualizer {
                 if(this.settings.display_link_mesh_only_with_frame && this.settings.display_wireframe) {
                     this.robot.set_link_wireframe_visibility(three_engine, i, true);
                 }
+            }
+
+            if(this.settings['link' + i.toString() + 'hull']) {
+                this.robot.set_link_convex_hull_mesh_visibility(three_engine, i, true);
             }
         }
 
