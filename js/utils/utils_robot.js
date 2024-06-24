@@ -589,6 +589,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
     }
 }
 
+/*
 export class XArm7Robot extends RobotBaseClass {
     constructor() {
         super();
@@ -950,3 +951,4 @@ export class B1Z1Robot extends RobotBaseClass {
         return [[0], [1], [2, 3, 4, 10, 11, 17, 18, 24, 25, 31], [5, 6, 12, 13, 19, 20, 26, 27, 32], [7, 8, 14, 15, 21, 22, 28, 29, 33], [9, 16, 23, 30, 34], [35], [36], [37], [38], [39], [40]];
     }
 }
+*/
