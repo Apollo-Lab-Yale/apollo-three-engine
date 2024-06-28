@@ -33,14 +33,14 @@
 
     let engine = ThreeEngine.new_default_3d();
 
-    const robot_dir = '../../../apollo_robots_dir/panda';
-    import chainConfig from '../../../apollo_robots_dir/panda/chain_module/module.json' with {type: 'json'};
-    import urdfConfig from '../../../apollo_robots_dir/panda/urdf_module/module.json' with {type: 'json'};
-    import meshConfig_stl from '../../../apollo_robots_dir/panda/mesh_modules/stl_meshes_module/module.json' with {type: 'json'};
-    import meshConfig from '../../../apollo_robots_dir/panda/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
-    import meshConfig_hull from '../../../apollo_robots_dir/panda/mesh_modules/convex_hull_meshes_module/module.json' with {type: 'json'};
+    const robot_dir = '../../../apollo_robots_dir/robots';
+    import chainConfig from '../../../apollo_robots_dir/robots/panda/chain_module/module.json' with {type: 'json'};
+    import urdfConfig from '../../../apollo_robots_dir/robots/panda/urdf_module/module.json' with {type: 'json'};
+    import meshConfig_stl from '../../../apollo_robots_dir/robots/panda/mesh_modules/stl_meshes_module/module.json' with {type: 'json'};
+    import meshConfig from '../../../apollo_robots_dir/robots/panda/mesh_modules/original_meshes_module/module.json' with {type: 'json'};
+    import meshConfig_hull from '../../../apollo_robots_dir/robots/panda/mesh_modules/convex_hull_meshes_module/module.json' with {type: 'json'};
 
-    import meshConfig_convex_decomposition from '../../../apollo_robots_dir/panda/mesh_modules/convex_decomposition_meshes_module/module.json' with {type: 'json'};
+    import meshConfig_convex_decomposition from '../../../apollo_robots_dir/robots/panda/mesh_modules/convex_decomposition_meshes_module/module.json' with {type: 'json'};
 
     let robot = new RobotFromPreprocessor(
         chainConfig,
