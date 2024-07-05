@@ -204,8 +204,8 @@ export class RobotBaseClass {
                 if (typeof link_mesh_name === 'object') {
                     if (link_mesh_name.length === 0) {
                     } else {
-                        // We assume the link has multiple mesh files as stls
-                        const fps = this.mesh_config.link_mesh_relative_paths[link.link_idx];
+                        // We assume the link has multiple mesh files as stls <-- For now this is only the case when loading convex decomposition
+                        const fps = this.convex_decomposition_mesh_config.stl_link_mesh_relative_paths[link.link_idx];
                         for (const file of fps) {
                             let idx = await engine.add_stl_mesh_object('../../' + this.robot_links_mesh_directory_name + '/' + file);
                             idxs.push(idx);
@@ -454,7 +454,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         chain_config,
         urdf_config,
         original_mesh_config,
-        stl_mesh_config,
+        plain_mesh_config,
+        display_mesh_type,
         convex_hull_mesh_config,
         convex_decomposition_mesh_config,
         robot_dir
@@ -463,9 +464,9 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         this.robot_dir = robot_dir;
         this.chain_config = chain_config;
         this.urdf_config = urdf_config;
-        this.mesh_config = original_mesh_config;
-        this.stl_mesh_config = stl_mesh_config;
+        this.plain_mesh_config = plain_mesh_config;
         this.original_mesh_config = original_mesh_config;
+        this.display_mesh_type = display_mesh_type;
         this.convex_hull_mesh_config = convex_hull_mesh_config;
         this.convex_decomposition_mesh_config = convex_decomposition_mesh_config;
 
@@ -548,11 +549,24 @@ export class RobotFromPreprocessor extends RobotBaseClass {
     get_robot_links() {
         if (!this.chain_config || !this.urdf_config) return [];
 
+        let mesh_paths;
+        if (this.display_mesh_type === 'stl') {
+            mesh_paths = this.plain_mesh_config.stl_link_mesh_relative_paths;
+        } else if (this.display_mesh_type === 'glb') {
+            mesh_paths = this.plain_mesh_config.glb_link_mesh_relative_paths;
+        } else if (this.display_mesh_type === 'original_mesh') {
+            mesh_paths = this.original_mesh_config.link_mesh_relative_paths;
+        } else if (this.display_mesh_type === 'convex_decomposition') {
+            mesh_paths = this.convex_decomposition_mesh_config.stl_link_mesh_relative_paths;
+        }
+
         return this.chain_config.links_in_chain.map(link => {
             const link_urdf_geometry = this.urdf_config.links.find(l => l.name === link.name);
 
-            let mesh_path = this.mesh_config.link_mesh_relative_paths[link.link_idx];
-            const convex_hull_mesh_path = this.convex_hull_mesh_config.link_mesh_relative_paths[link.link_idx];
+            // let mesh_path = this.mesh_config.link_mesh_relative_paths[link.link_idx];
+            let mesh_path = mesh_paths[link.link_idx];
+            // const convex_hull_mesh_path = this.convex_hull_mesh_config.link_mesh_relative_paths[link.link_idx];
+            const convex_hull_mesh_path = this.convex_hull_mesh_config.stl_link_mesh_relative_paths[link.link_idx];
 
             if (mesh_path === null) {
                 return new RobotLink(

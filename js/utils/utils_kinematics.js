@@ -521,7 +521,7 @@ export class RobotFKSlidersVisualizer {
             display_wireframe:init_display_wireframe,
             display_mesh:init_display_mesh,
             display_link_mesh_only_with_frame:init_display_link_mesh_only_with_frame,
-            mesh_source: robot.mesh_config,
+            mesh_source: 'stl',
             mesh_source_changed: false,
         };
 
@@ -546,9 +546,11 @@ export class RobotFKSlidersVisualizer {
         // Add dropdown to the GUI
         // Define options for dropdown
         let options = {
-            'Original': robot.original_mesh_config,
-            'STL': robot.stl_mesh_config,
-            'Convex Decomposition': robot.convex_decomposition_mesh_config
+            'STL': 'stl',
+            'GLB': 'glb',
+            'Original': 'original_mesh',
+            'Convex Decomposition': 'convex_decomposition'
+            //'Convex Decomposition': robot.convex_decomposition_mesh_config
         };
         this.gui.add(this.settings, 'mesh_source', options).name('Mesh Source').onChange((value) => {
             this.settings.mesh_source_changed = true;
@@ -689,7 +691,7 @@ export class RobotFKSlidersVisualizer {
         // Added to implment choosing which mesh files to use
         if (this.settings.mesh_source_changed) {
             this.robot.despawn_robot(three_engine);
-            this.robot.mesh_config = this.settings.mesh_source;
+            this.robot.display_mesh_type = this.settings.mesh_source;
             this.robot.links = this.robot.get_robot_links();
             console.log(this.robot.links);
             this.robot.spawn_robot(three_engine);
