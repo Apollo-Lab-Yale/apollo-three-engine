@@ -552,6 +552,7 @@ export class RobotFKSlidersVisualizer {
             'Convex Decomposition': 'convex_decomposition'
             //'Convex Decomposition': robot.convex_decomposition_mesh_config
         };
+
         this.gui.add(this.settings, 'mesh_source', options).name('Mesh Source').onChange((value) => {
             this.settings.mesh_source_changed = true;
             console.log('changed mesh source');

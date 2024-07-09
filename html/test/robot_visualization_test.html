@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>In Browser Test Visualization</title>
+    <style>
+        #visualization-container {
+            text-align: center;
+            display: none;
+        }
+        #menu-container {
+            text-align: center;
+        }
+    </style>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three_engine/": "https://cdn.jsdelivr.net/gh/Apollo-Lab-Yale/apollo_three_engine/js/",
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<div id="menu-container">
+    <h1>Select a Robot</h1>
+    <label for="robot-select">Choose a robot:</label>
+    <select id="robot-select">
+        <!-- Options will be populated dynamically -->
+    </select>
+    <button id="load-robot">Load Robot</button>
+</div>
+
+<script>
+    // Populate the dropdown options
+    document.addEventListener('DOMContentLoaded', () => {
+        const robots = ['aliengo', 'b1', 'go1', 'lite6', 'panda', 'ur5', 'xarm7', 'xarm7_with_gripper', 'xarm7_with_gripper_and_rail', 'z1', 'test', 'tester']; // Predefined list of robots
+        const select = document.getElementById('robot-select');
+
+        robots.forEach(robot => {
+            const option = document.createElement('option');
+            option.value = robot.toLowerCase().replace(/\s+/g, '-');
+            option.textContent = robot;
+            select.appendChild(option);
+        });
+    });
+</script>
+
+<div id="visualization-container">
+    <h1>Robot Visualization</h1>
+    <!-- Visualization content will go here -->
+</div>
+
+<script type="module">
+    import { ThreeEngine } from "../../js/utils/utils_three.js";
+    import { visualize_robot } from '../../js/utils/utils_robots_visualization.js';
+
+    let engine = ThreeEngine.new_default_3d();
+    const robots_dir = '../../../apollo_robots_dir/robots';
+
+    document.getElementById('load-robot').addEventListener('click', () => {
+        const robot_name = document.getElementById('robot-select').value;
+        document.getElementById('menu-container').style.display = 'none';
+        document.getElementById('visualization-container').style.display = 'block';
+        visualize_robot(engine, robots_dir, robot_name);
+    });
+</script>
+</body>
+</html>
