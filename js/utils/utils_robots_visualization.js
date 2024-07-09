@@ -1,7 +1,7 @@
 import {RobotFromPreprocessor} from "./utils_robot.js";
 import {RobotFKSlidersVisualizer} from "./utils_kinematics.js";
 
-export async function visualize_robot(engine, robots_dir, robot_name) {
+export async function visualize_robot(engine, parent_dir, robots_dir, robot_name) {
     const robot_dir = `${robots_dir}/${robot_name}`;
     const [chainConfig, urdfConfig, meshConfig_stl, meshConfig, meshConfig_hull, meshConfig_convex_decomposition] = await Promise.all([
         fetch(`${robot_dir}/chain_module/module.json`).then(response => response.json()),
@@ -20,7 +20,7 @@ export async function visualize_robot(engine, robots_dir, robot_name) {
         'stl',
         meshConfig_hull,
         meshConfig_convex_decomposition,
-        robots_dir
+        `${parent_dir}/${robots_dir}`
     );
 
     robot.spawn_robot(engine);
