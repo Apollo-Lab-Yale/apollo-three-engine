@@ -215,4 +215,3 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
         update: update
     };
 }
-
