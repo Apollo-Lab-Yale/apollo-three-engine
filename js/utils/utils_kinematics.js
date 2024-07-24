@@ -549,7 +549,8 @@ export class RobotFKSlidersVisualizer {
             'STL': 'stl',
             'GLB': 'glb',
             'Original': 'original_mesh',
-            'Convex Decomposition': 'convex_decomposition'
+            'Convex Decomposition': 'convex_decomposition',
+            'Convex Hulls': 'convex_hull',
             //'Convex Decomposition': robot.convex_decomposition_mesh_config
         };
 

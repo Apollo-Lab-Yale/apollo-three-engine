@@ -207,7 +207,7 @@ export class RobotBaseClass {
                         // We assume the link has multiple mesh files as stls <-- For now this is only the case when loading convex decomposition
                         const fps = this.convex_decomposition_mesh_config.stl_link_mesh_relative_paths[link.link_idx];
                         for (const file of fps) {
-                            let idx = await engine.add_stl_mesh_object('../../' + this.robot_links_mesh_directory_name + '/' + file);
+                            let idx = await engine.add_stl_mesh_object('../../' + this.robot_links_mesh_directory_name + '/' + file, 0xb5b5b5);
                             idxs.push(idx);
                         }
                     }
@@ -216,7 +216,7 @@ export class RobotBaseClass {
                 } else if (fp.endsWith('.glb' || '.gltf')) {
                     idxs = await engine.add_gltf_mesh_object(fp);
                 } else if (fp.endsWith('.stl')) {
-                    let idx = await engine.add_stl_mesh_object(fp);
+                    let idx = await engine.add_stl_mesh_object(fp, 0xb5b5b5);
                     idxs = [idx];
                 } else { // We assume the link has multiple mesh files as stls
                     console.error('Wrong file type');
@@ -558,6 +558,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
             mesh_paths = this.original_mesh_config.link_mesh_relative_paths;
         } else if (this.display_mesh_type === 'convex_decomposition') {
             mesh_paths = this.convex_decomposition_mesh_config.stl_link_mesh_relative_paths;
+        } else if (this.display_mesh_type === 'convex_hull') {
+            mesh_paths = this.convex_hull_mesh_config.stl_link_mesh_relative_paths;
         }
 
         return this.chain_config.links_in_chain.map(link => {
