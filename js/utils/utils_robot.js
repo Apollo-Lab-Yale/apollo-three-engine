@@ -458,6 +458,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         display_mesh_type,
         convex_hull_mesh_config,
         convex_decomposition_mesh_config,
+        bounding_box_config,
         robot_dir
     ) {
         super();
@@ -469,6 +470,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         this.display_mesh_type = display_mesh_type;
         this.convex_hull_mesh_config = convex_hull_mesh_config;
         this.convex_decomposition_mesh_config = convex_decomposition_mesh_config;
+        this.bounding_box_config = bounding_box_config;
 
         this.robot_links_mesh_directory_name = this.get_robot_links_mesh_directory_name();
         this.robot_name = urdf_config.name;

@@ -25,6 +25,11 @@ import {
     optimization_solve
 } from "./utils_optimization.js";
 import {TransformGizmoEngine} from "./utils_transform_gizmo.js";
+import {
+    get_bounding_sphere_radius,
+    get_bounding_sphere_offset,
+    draw_obb,
+} from "./utils_visualize_bounding_volumes.js";
 
 export function forward_kinematics_SE3(robot, state) {
     let num_links = robot.num_links();
@@ -639,6 +644,22 @@ export class RobotFKSlidersVisualizer {
             links_folder.add(this.settings, 'link' + i.toString() + 'frame').name('link ' + i.toString() + ': ' + robot.links[i].link_name);
         }
 
+        let bounding_spheres_folder = gui.addFolder('Bounding Spheres');
+        for(let i=0; i < robot.links.length; i++) {
+            let val = false;
+            if(init_all_links_selected) { val = true; }
+            this.settings['link' + i.toString() + 'bounding_sphere'] = val;
+            bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'bounding_sphere').name(robot.links[i].link_name + ' bounding sphere');
+        }
+
+        let bounding_box_folder = gui.addFolder('Bounding Boxes');
+        for(let i=0; i < robot.links.length; i++) {
+            let val = false;
+            if(init_all_links_selected) { val = true; }
+            this.settings['link' + i.toString() + 'bounding_box'] = val;
+            bounding_box_folder.add(this.settings, 'link' + i.toString() + 'bounding_box').name(robot.links[i].link_name + ' bounding box');
+        }
+
         let convex_hull_folder = gui.addFolder('Convex Hulls');
         for(let i=0; i < robot.links.length; i++) {
             let val = false;
@@ -675,8 +696,42 @@ export class RobotFKSlidersVisualizer {
             refresh_displays(gui);
         };
 
+        this.actions['select_all_spheres'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'bounding_sphere'] = true;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['deselect_all_spheres'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'bounding_sphere'] = false;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['select_all_boxes'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'bounding_box'] = true;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['deselect_all_boxes'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'bounding_box'] = false;
+            }
+            refresh_displays(gui);
+        };
+
         actions_folder.add(this.actions, 'select_all').name('Select All Frames');
         actions_folder.add(this.actions, 'deselect_all').name('Deselect All Frames');
+
+        actions_folder.add(this.actions, 'select_all_boxes').name('Select All Bounding Boxes');
+        actions_folder.add(this.actions, 'deselect_all_boxes').name('Deselect All Bounding Boxes');
+
+        actions_folder.add(this.actions, 'select_all_spheres').name('Select All Bounding Spheres');
+        actions_folder.add(this.actions, 'deselect_all_spheres').name('Deselect All Bounding Spheres');
 
         actions_folder.add(this.actions, 'select_all_hulls').name('Select All Convex Hulls');
         actions_folder.add(this.actions, 'deselect_all_hulls').name('Deselect All Convex Hulls');
@@ -772,7 +827,7 @@ export class RobotFKSlidersVisualizer {
                 this.robot.set_link_mesh_pose_from_SO3_matrix_and_position(three_engine, i, frame[0], frame[1]);
             }
 
-            if(this.settings['link' + i.toString() + 'frame']) {
+            if(this.settings['link' + i.toString() + 'frame'] || this.settings['link' + i.toString() + 'bounding_sphere'] || this.settings['link' + i.toString() + 'bounding_box']) {
                 let R = frame[0];
                 let t = frame[1];
                 let rxv = [ [R[0][0]], [R[1][0]], [R[2][0]] ];
@@ -780,15 +835,31 @@ export class RobotFKSlidersVisualizer {
                 let rzv = [ [R[0][2]], [R[1][2]], [R[2][2]] ];
                 // let t = [ [frame[0][3]], [frame[1][3]], [frame[2][3]] ];
 
-                three_engine.draw_debug_line(t, add_matrix_matrix(t, mul_matrix_scalar(rxv, 0.05)), true, 0.002, 0xff3333);
-                three_engine.draw_debug_line(t, add_matrix_matrix(t, mul_matrix_scalar(ryv, 0.05)), true, 0.002, 0x33ff33);
-                three_engine.draw_debug_line(t, add_matrix_matrix(t, mul_matrix_scalar(rzv, 0.05)), true, 0.002, 0x3333ff);
+                if(this.settings['link' + i.toString() + 'frame']) {
+                    three_engine.draw_debug_line(t, add_matrix_matrix(t, mul_matrix_scalar(rxv, 0.05)), true, 0.002, 0xff3333);
+                    three_engine.draw_debug_line(t, add_matrix_matrix(t, mul_matrix_scalar(ryv, 0.05)), true, 0.002, 0x33ff33);
+                    three_engine.draw_debug_line(t, add_matrix_matrix(t, mul_matrix_scalar(rzv, 0.05)), true, 0.002, 0x3333ff);
 
-                if(this.settings.display_link_mesh_only_with_frame && this.settings.display_mesh) {
-                    this.robot.set_link_mesh_visibility(three_engine, i, true);
+                    if(this.settings.display_link_mesh_only_with_frame && this.settings.display_mesh) {
+                        this.robot.set_link_mesh_visibility(three_engine, i, true);
+                    }
+                    if(this.settings.display_link_mesh_only_with_frame && this.settings.display_wireframe) {
+                        this.robot.set_link_wireframe_visibility(three_engine, i, true);
+                    }
                 }
-                if(this.settings.display_link_mesh_only_with_frame && this.settings.display_wireframe) {
-                    this.robot.set_link_wireframe_visibility(three_engine, i, true);
+
+                if(this.settings['link' + i.toString() + 'bounding_sphere']) {
+                    let center = add_matrix_matrix(t, get_bounding_sphere_offset(this.robot.bounding_box_config, i));
+                    three_engine.draw_debug_sphere(
+                        center,
+                        get_bounding_sphere_radius(this.robot.bounding_box_config, i),
+                        0x0000ff,
+                        0.1
+                    );
+                }
+
+                if(this.settings['link' + i.toString() + 'bounding_box']) {
+                    draw_obb(three_engine, this.robot.bounding_box_config, i, R, t);
                 }
             }
 

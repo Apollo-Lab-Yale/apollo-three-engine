@@ -37,6 +37,8 @@ export class ThreeEngine {
         this.num_line_objects_used_on_curr_frame = 0;
         this.sphere_objects = [];
         this.num_sphere_objects_used_on_curr_frame = 0;
+        this.box_objects = [];
+        this.num_box_objects_used_on_curr_frame = 0;
         this.cone_objects = [];
         this.num_cone_objects_used_on_curr_frame = 0;
         this.plane_objects = [];
@@ -488,6 +490,36 @@ export class ThreeEngine {
         this.num_sphere_objects_used_on_curr_frame++;
     }
 
+    draw_debug_box(center_point, half_extents, quaternion, color=0x00ffff, opacity=1.0) {
+        // initialize box objects if needed
+        if (!this.box_objects) {
+            this.box_objects = [];
+        }
+        if (this.num_box_objects_used_on_curr_frame >= this.box_objects.length) {
+            for (let i = 0; i < 500; i++) {
+                let box_object = spawn_box_default(this.scene, color, opacity);
+                box_object.visible = false;
+                this.box_objects.push(box_object);
+            }
+        }
+        let box_object = this.box_objects[this.num_box_objects_used_on_curr_frame];
+
+        box_object.position.set(center_point[0], center_point[1], center_point[2]);
+        box_object.scale.set(half_extents[0] * 2, half_extents[1] * 2, half_extents[2] * 2);
+
+        // rotate box
+        box_object.setRotationFromQuaternion(quaternion);
+
+        box_object.visible = true;
+        box_object.material.color.set(color);
+        box_object.material.opacity = opacity;
+        box_object.material.transparent = opacity < 1.0;
+
+        this.num_box_objects_used_on_curr_frame++;
+
+        return box_object;
+    }
+
     draw_debug_cone(start_point, end_point, radius, color=0x0000ff, opacity=1.0) {
         if (this.num_cone_objects_used_on_curr_frame >= this.cone_objects.length) {
             for (let i = 0; i < 500; i++) {
@@ -764,6 +796,7 @@ export class ThreeEngine {
             this.stats.begin();
 
             this.num_sphere_objects_used_on_curr_frame = 0;
+            this.num_box_objects_used_on_curr_frame = 0;
             this.num_line_objects_used_on_curr_frame = 0;
             this.num_cone_objects_used_on_curr_frame = 0;
             this.num_plane_objects_used_on_curr_frame = 0;
@@ -782,6 +815,7 @@ export class ThreeEngine {
             // this.line_objects = [];
 
             for(let i = 0; i < this.num_sphere_objects_used_on_curr_frame; i++) {this.sphere_objects[i].visible = false;}
+            for(let i = 0; i < this.num_box_objects_used_on_curr_frame; i++) {this.box_objects[i].visible = false;}
             for(let i = 0; i < this.num_line_objects_used_on_curr_frame; i++) {this.line_objects[i].visible = false;}
             for(let i = 0; i < this.num_cone_objects_used_on_curr_frame; i++) {this.cone_objects[i].visible = false;}
             for(let i = 0; i < this.num_plane_objects_used_on_curr_frame; i++) {this.plane_objects[i].visible = false;}
@@ -1124,6 +1158,15 @@ export function spawn_cube_base(scene, center_point, width=1, height=1, depth=1,
     scene.add( cube );
 
     return cube;
+}
+
+export function spawn_box_default(scene, color, opacity) {
+    // Create a box geometry
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshBasicMaterial({ color: color, transparent: opacity < 1.0, opacity: opacity, wireframe: true });
+    const box = new THREE.Mesh(geometry, material);
+    scene.add(box);
+    return box;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
