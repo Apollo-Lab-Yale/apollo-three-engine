@@ -135,5 +135,4 @@ export function draw_bounding_sphere(engine, boundingConfig, i, R, t) {
         0x0000ff,
         0.1
     );
-    
 }
