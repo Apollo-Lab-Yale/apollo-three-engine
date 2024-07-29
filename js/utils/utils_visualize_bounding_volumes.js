@@ -123,3 +123,16 @@ export function draw_obb(engine, boundingConfig, i, R, t) {
     let box = engine.draw_debug_box(center_point, half_extents, combined_quaternion);
     apply_global_rotation(box, new THREE.Vector3(1, 0, 0), - Math.PI / 2);
 }
+
+export function draw_bounding_sphere(engine, boundingConfig, i, R, t) {
+    let offset_xyz = get_bounding_sphere_offset(boundingConfig, i);
+    let radius = get_bounding_sphere_radius(boundingConfig, i);
+    let rotated_offset = mul_matrix_matrix(R, [[offset_xyz[0]],[offset_xyz[1]],[offset_xyz[2]]]);
+    let center_point = add_matrix_matrix(t, rotated_offset);
+    engine.draw_debug_sphere(
+        center_point,
+        radius,
+        0x0000ff,
+        0.1
+    );
+}

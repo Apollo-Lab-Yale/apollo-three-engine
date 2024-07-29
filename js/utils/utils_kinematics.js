@@ -29,6 +29,7 @@ import {
     get_bounding_sphere_radius,
     get_bounding_sphere_offset,
     draw_obb,
+    draw_bounding_sphere,
 } from "./utils_visualize_bounding_volumes.js";
 
 export function forward_kinematics_SE3(robot, state) {
@@ -849,13 +850,7 @@ export class RobotFKSlidersVisualizer {
                 }
 
                 if(this.settings['link' + i.toString() + 'bounding_sphere']) {
-                    let center = add_matrix_matrix(t, get_bounding_sphere_offset(this.robot.bounding_box_config, i));
-                    three_engine.draw_debug_sphere(
-                        center,
-                        get_bounding_sphere_radius(this.robot.bounding_box_config, i),
-                        0x0000ff,
-                        0.1
-                    );
+                    draw_bounding_sphere(three_engine, this.robot.bounding_box_config, i, R, t);
                 }
 
                 if(this.settings['link' + i.toString() + 'bounding_box']) {
