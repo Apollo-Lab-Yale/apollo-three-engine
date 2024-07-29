@@ -1,4 +1,4 @@
-import {add_matrix_matrix, transpose} from "./utils_math.js";
+import {add_matrix_matrix, mul_matrix_matrix, transpose} from "./utils_math.js";
 import * as THREE from 'three';
 
 export function get_bounding_sphere_radius(boundingConfig, i) {
@@ -105,9 +105,9 @@ function apply_global_rotation(box, axis, angle) {
 }
 
 export function draw_obb(engine, boundingConfig, i, R, t) {
-    let center_point = add_matrix_matrix(t, get_obb_offset(boundingConfig, i));
     let half_extents = get_obb_half_extents(boundingConfig, i);
     let offset_rpy = get_obb_RPY(boundingConfig, i);
+    let offset_xyz = get_obb_offset(boundingConfig, i);
 
     let quaternion = new THREE.Quaternion();
     quaternion.setFromEuler(new THREE.Euler(offset_rpy[0], offset_rpy[1], offset_rpy[2]));
@@ -117,6 +117,9 @@ export function draw_obb(engine, boundingConfig, i, R, t) {
     let combined_quaternion = new THREE.Quaternion();
     combined_quaternion.multiplyQuaternions(quaternion1, quaternion);
 
-    let box = engine.draw_debug_box(t, half_extents, combined_quaternion);
+    let rotated_offset = mul_matrix_matrix(R, [[offset_xyz[0]],[offset_xyz[1]],[offset_xyz[2]]]);
+    let center_point = add_matrix_matrix(t, rotated_offset);
+
+    let box = engine.draw_debug_box(center_point, half_extents, combined_quaternion);
     apply_global_rotation(box, new THREE.Vector3(1, 0, 0), - Math.PI / 2);
 }
