@@ -548,7 +548,7 @@ export class RobotFKSlidersVisualizer {
             }
         }
 
-        let gui = get_default_lil_gui();
+        let gui = get_default_lil_gui(300);
         this.gui = gui;
 
         // Add dropdown to the GUI
@@ -646,38 +646,43 @@ export class RobotFKSlidersVisualizer {
             this.settings['link' + i.toString() + 'frame'] = val;
             links_folder.add(this.settings, 'link' + i.toString() + 'frame').name('link ' + i.toString() + ': ' + robot.links[i].link_name);
         }
+        links_folder.close();
 
         let bounding_spheres_folder = gui.addFolder('Bounding Spheres');
         for(let i=0; i < robot.links.length; i++) {
             let val = false;
             if(init_all_links_selected) { val = true; }
             this.settings['link' + i.toString() + 'bounding_sphere'] = val;
-            bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'bounding_sphere').name(robot.links[i].link_name + ' bounding sphere');
+            bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'bounding_sphere').name(robot.links[i].link_name + ' b. sphere');
         }
+        bounding_spheres_folder.close();
 
         let bounding_box_folder = gui.addFolder('Bounding Boxes');
         for(let i=0; i < robot.links.length; i++) {
             let val = false;
             if(init_all_links_selected) { val = true; }
             this.settings['link' + i.toString() + 'bounding_box'] = val;
-            bounding_box_folder.add(this.settings, 'link' + i.toString() + 'bounding_box').name(robot.links[i].link_name + ' bounding box');
+            bounding_box_folder.add(this.settings, 'link' + i.toString() + 'bounding_box').name(robot.links[i].link_name + ' b. box');
         }
+        bounding_box_folder.close();
 
         let decomposed_bounding_box_folder = gui.addFolder('Decomposed Bounding Boxes');
         for(let i=0; i < robot.links.length; i++) {
             let val = false;
             if(init_all_links_selected) { val = true; }
             this.settings['link' + i.toString() + 'decomposed_bounding_box'] = val;
-            decomposed_bounding_box_folder.add(this.settings, 'link' + i.toString() + 'decomposed_bounding_box').name(robot.links[i].link_name + 'decomposed bounding box');
+            decomposed_bounding_box_folder.add(this.settings, 'link' + i.toString() + 'decomposed_bounding_box').name(robot.links[i].link_name + ' decomposed b. boxes');
         }
+        decomposed_bounding_box_folder.close();
 
         let decomposed_bounding_spheres_folder = gui.addFolder('Decomposed Bounding Spheres');
         for(let i=0; i < robot.links.length; i++) {
             let val = false;
             if(init_all_links_selected) { val = true; }
             this.settings['link' + i.toString() + 'decomposed_bounding_sphere'] = val;
-            decomposed_bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'decomposed_bounding_sphere').name(robot.links[i].link_name + ' sphere');
+            decomposed_bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'decomposed_bounding_sphere').name(robot.links[i].link_name + ' decomposed b. spheres');
         }
+        decomposed_bounding_spheres_folder.close();
 
         let convex_hull_folder = gui.addFolder('Convex Hulls');
         for(let i=0; i < robot.links.length; i++) {
@@ -686,6 +691,7 @@ export class RobotFKSlidersVisualizer {
             this.settings['link' + i.toString() + 'hull'] = val;
             convex_hull_folder.add(this.settings, 'link' + i.toString() + 'hull').name(robot.links[i].link_name + ' hull');
         }
+        convex_hull_folder.close();
 
         this.actions['select_all'] = () => {
             for(let i=0; i < robot.links.length; i++) {
@@ -774,22 +780,23 @@ export class RobotFKSlidersVisualizer {
         actions_folder.add(this.actions, 'select_all').name('Select All Frames');
         actions_folder.add(this.actions, 'deselect_all').name('Deselect All Frames');
 
-        actions_folder.add(this.actions, 'select_all_boxes').name('Select All Bounding Boxes');
-        actions_folder.add(this.actions, 'deselect_all_boxes').name('Deselect All Bounding Boxes');
+        actions_folder.add(this.actions, 'select_all_boxes').name('Select All B. Boxes');
+        actions_folder.add(this.actions, 'deselect_all_boxes').name('Deselect All B. Boxes');
 
-        actions_folder.add(this.actions, 'select_all_spheres').name('Select All Bounding Spheres');
-        actions_folder.add(this.actions, 'deselect_all_spheres').name('Deselect All Bounding Spheres');
+        actions_folder.add(this.actions, 'select_all_spheres').name('Select All B. Spheres');
+        actions_folder.add(this.actions, 'deselect_all_spheres').name('Deselect All B. Spheres');
 
-        actions_folder.add(this.actions, 'select_all_decomposed_boxes').name('Select All Decomposed Bounding Boxes');
-        actions_folder.add(this.actions, 'deselect_all_decomposed_boxes').name('Deselect All Decomposed Bounding Boxes');
+        actions_folder.add(this.actions, 'select_all_decomposed_boxes').name('Select All Decomposed B. Boxes');
+        actions_folder.add(this.actions, 'deselect_all_decomposed_boxes').name('Deselect All Decomposed B. Boxes');
 
-        actions_folder.add(this.actions, 'select_all_decomposed_spheres').name('Select All Decomposed Bounding Spheres');
-        actions_folder.add(this.actions, 'deselect_all_decomposed_spheres').name('Deselect All Decomposed Bounding Spheres');
+        actions_folder.add(this.actions, 'select_all_decomposed_spheres').name('Select All Decomposed B. Spheres');
+        actions_folder.add(this.actions, 'deselect_all_decomposed_spheres').name('Deselect All Decomposed B. Spheres');
 
         actions_folder.add(this.actions, 'select_all_hulls').name('Select All Convex Hulls');
         actions_folder.add(this.actions, 'deselect_all_hulls').name('Deselect All Convex Hulls');
 
         this.gui = gui;
+
     }
 
     set_mesh_configs(config1, config2) {
