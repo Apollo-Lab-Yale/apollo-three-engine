@@ -30,7 +30,8 @@ import {
     get_bounding_sphere_offset,
     draw_obb,
     draw_bounding_sphere,
-    draw_decomposed_obb, draw_decomposed_bounding_sphere,
+    draw_decomposed_obb,
+    draw_decomposed_bounding_sphere,
 } from "./utils_visualize_bounding_volumes.js";
 
 export function forward_kinematics_SE3(robot, state) {
