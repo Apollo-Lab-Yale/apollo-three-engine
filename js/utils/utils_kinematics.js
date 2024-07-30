@@ -30,6 +30,7 @@ import {
     get_bounding_sphere_offset,
     draw_obb,
     draw_bounding_sphere,
+    draw_decomposed_obb, draw_decomposed_bounding_sphere,
 } from "./utils_visualize_bounding_volumes.js";
 
 export function forward_kinematics_SE3(robot, state) {
@@ -661,6 +662,22 @@ export class RobotFKSlidersVisualizer {
             bounding_box_folder.add(this.settings, 'link' + i.toString() + 'bounding_box').name(robot.links[i].link_name + ' bounding box');
         }
 
+        let decomposed_bounding_box_folder = gui.addFolder('Decomposed Bounding Boxes');
+        for(let i=0; i < robot.links.length; i++) {
+            let val = false;
+            if(init_all_links_selected) { val = true; }
+            this.settings['link' + i.toString() + 'decomposed_bounding_box'] = val;
+            decomposed_bounding_box_folder.add(this.settings, 'link' + i.toString() + 'decomposed_bounding_box').name(robot.links[i].link_name + 'decomposed bounding box');
+        }
+
+        let decomposed_bounding_spheres_folder = gui.addFolder('Decomposed Bounding Spheres');
+        for(let i=0; i < robot.links.length; i++) {
+            let val = false;
+            if(init_all_links_selected) { val = true; }
+            this.settings['link' + i.toString() + 'decomposed_bounding_sphere'] = val;
+            decomposed_bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'decomposed_bounding_sphere').name(robot.links[i].link_name + ' sphere');
+        }
+
         let convex_hull_folder = gui.addFolder('Convex Hulls');
         for(let i=0; i < robot.links.length; i++) {
             let val = false;
@@ -725,6 +742,34 @@ export class RobotFKSlidersVisualizer {
             refresh_displays(gui);
         };
 
+        this.actions['select_all_decomposed_boxes'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'decomposed_bounding_box'] = true;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['deselect_all_decomposed_boxes'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'decomposed_bounding_box'] = false;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['select_all_decomposed_spheres'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'decomposed_bounding_sphere'] = true;
+            }
+            refresh_displays(gui);
+        };
+
+        this.actions['deselect_all_decomposed_spheres'] = () => {
+            for(let i=0; i < robot.links.length; i++) {
+                this.settings['link' + i.toString() + 'decomposed_bounding_sphere'] = false;
+            }
+            refresh_displays(gui);
+        };
+
         actions_folder.add(this.actions, 'select_all').name('Select All Frames');
         actions_folder.add(this.actions, 'deselect_all').name('Deselect All Frames');
 
@@ -733,6 +778,12 @@ export class RobotFKSlidersVisualizer {
 
         actions_folder.add(this.actions, 'select_all_spheres').name('Select All Bounding Spheres');
         actions_folder.add(this.actions, 'deselect_all_spheres').name('Deselect All Bounding Spheres');
+
+        actions_folder.add(this.actions, 'select_all_decomposed_boxes').name('Select All Decomposed Bounding Boxes');
+        actions_folder.add(this.actions, 'deselect_all_decomposed_boxes').name('Deselect All Decomposed Bounding Boxes');
+
+        actions_folder.add(this.actions, 'select_all_decomposed_spheres').name('Select All Decomposed Bounding Spheres');
+        actions_folder.add(this.actions, 'deselect_all_decomposed_spheres').name('Deselect All Decomposed Bounding Spheres');
 
         actions_folder.add(this.actions, 'select_all_hulls').name('Select All Convex Hulls');
         actions_folder.add(this.actions, 'deselect_all_hulls').name('Deselect All Convex Hulls');
@@ -828,7 +879,13 @@ export class RobotFKSlidersVisualizer {
                 this.robot.set_link_mesh_pose_from_SO3_matrix_and_position(three_engine, i, frame[0], frame[1]);
             }
 
-            if(this.settings['link' + i.toString() + 'frame'] || this.settings['link' + i.toString() + 'bounding_sphere'] || this.settings['link' + i.toString() + 'bounding_box']) {
+            if(
+                this.settings['link' + i.toString() + 'frame'] ||
+                this.settings['link' + i.toString() + 'bounding_sphere'] ||
+                this.settings['link' + i.toString() + 'bounding_box'] ||
+                this.settings['link' + i.toString() + 'decomposed_bounding_box'] ||
+                this.settings['link' + i.toString() + 'decomposed_bounding_sphere']
+            ) {
                 let R = frame[0];
                 let t = frame[1];
                 let rxv = [ [R[0][0]], [R[1][0]], [R[2][0]] ];
@@ -855,6 +912,14 @@ export class RobotFKSlidersVisualizer {
 
                 if(this.settings['link' + i.toString() + 'bounding_box']) {
                     draw_obb(three_engine, this.robot.bounding_box_config, i, R, t);
+                }
+
+                if(this.settings['link' + i.toString() + 'decomposed_bounding_box']) {
+                    this.robot.bounding_box_config.decomposition_obbs.map((config, index) => draw_decomposed_obb(three_engine, this.robot.bounding_box_config, i, index, R, t));
+                }
+
+                if(this.settings['link' + i.toString() + 'decomposed_bounding_sphere']) {
+                    this.robot.bounding_box_config.decomposition_bounding_spheres.map((config, index) => draw_decomposed_bounding_sphere(three_engine, this.robot.bounding_box_config, i, index, R, t));
                 }
             }
 
