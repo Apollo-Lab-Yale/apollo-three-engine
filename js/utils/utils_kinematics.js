@@ -656,6 +656,7 @@ export class RobotFKSlidersVisualizer {
             bounding_spheres_folder.add(this.settings, 'link' + i.toString() + 'bounding_sphere').name(robot.links[i].link_name + ' b. sphere');
         }
         bounding_spheres_folder.close();
+        
 
         let bounding_box_folder = gui.addFolder('Bounding Boxes');
         for(let i=0; i < robot.links.length; i++) {
