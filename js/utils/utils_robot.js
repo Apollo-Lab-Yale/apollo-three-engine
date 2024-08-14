@@ -525,7 +525,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                 );
             } else if (
                 joint_urdf_geometry.joint_type === 'Continuous' ||
-                joint_urdf_geometry.joint_type === 'Revolute'
+                joint_urdf_geometry.joint_type === 'Revolute' ||
+                joint_urdf_geometry.joint_type === 'Prismatic'
             ) {
                 let lower_lim = joint_urdf_geometry.limit.lower;
                 let upper_lim = joint_urdf_geometry.limit.upper;
