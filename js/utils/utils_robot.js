@@ -488,6 +488,7 @@ export class RobotFromPreprocessor extends RobotBaseClass {
         if (joint_type === 'Prismatic') return RobotJointPrismatic;
         if (joint_type === 'Revolute') return RobotJointRevolute;
         if (joint_type === 'Continuous') return RobotJointRevolute;
+        if (joint_type === 'Floating') return RobotJointFloating;
         // Default to fixed joint
         return RobotJointFixed;
     }
@@ -522,7 +523,10 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                     joint_urdf_geometry.origin.xyz,
                     joint_urdf_geometry.origin.rpy,
                 );
-            } else {
+            } else if (
+                joint_urdf_geometry.joint_type === 'Continuous' ||
+                joint_urdf_geometry.joint_type === 'Revolute'
+            ) {
                 let lower_lim = joint_urdf_geometry.limit.lower;
                 let upper_lim = joint_urdf_geometry.limit.upper;
                 if (joint_urdf_geometry.joint_type === 'Continuous') {
@@ -543,6 +547,21 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                     dof_idx
                 );
                 dof_idx++;
+                return jointInstance;
+            } else if (joint_urdf_geometry.joint_type === 'Floating') {
+                const rotation_dof_idxs = [dof_idx, dof_idx + 1, dof_idx + 2];
+                const translation_dof_idxs = [dof_idx + 3, dof_idx + 4, dof_idx + 5];
+                const jointInstance = new JointClass(
+                    joint.joint_name,
+                    joint.joint_idx,
+                    joint.parent_link_idx,
+                    joint.child_link_idx,
+                    rotation_dof_idxs,
+                    translation_dof_idxs,
+                    joint_urdf_geometry.origin.xyz,
+                    joint_urdf_geometry.origin.rpy,
+                );
+                dof_idx += 6; // 3 for rotation + 3 for translation
                 return jointInstance;
             }
         });
