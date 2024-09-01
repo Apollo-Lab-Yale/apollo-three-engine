@@ -1,7 +1,22 @@
 import * as THREE from 'three';
 import { ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry.js';
 
+/**
+ * Draws a 2D function as a series of connected lines in the scene.
+ *
+ * @param {Object} engine - The rendering engine, including the scene, camera, and renderer.
+ * @param {Function} function_to_draw - The function to graph. It should take a single argument (x) and return a scalar value (y).
+ * @param {Array<number>} [domain=null] - The domain of the function to graph, as a two-element array [min, max].
+ * @param {number} [samples=null] - The number of samples to take across the domain.
+ * @param {number} [color=0x000000] - The color of the graph.
+ * @returns {Object} An object containing the `update` method to refresh the graph.
+ */
 export function draw_2d_function(engine, function_to_draw, domain = null, samples = null, color = 0x000000) {
+    /**
+     * Updates the graph based on the function and parameters provided.
+     *
+     * @param {boolean} [changed=true] - Whether the graph should be updated.
+     */
     function update(changed = true) {
         if (!changed) {
             return;
@@ -43,7 +58,15 @@ export function draw_2d_function(engine, function_to_draw, domain = null, sample
     };
 }
 
-
+/**
+ * Creates a parametric geometry based on a function and domain.
+ *
+ * @param {Function} function_to_draw - The function to graph. It should take two arguments (x, y) and return a scalar value (z).
+ * @param {number} width_segments - The number of segments along the width.
+ * @param {number} height_segments - The number of segments along the height.
+ * @param {Array<Array<number>>} domain - The domain of the function to graph, as a 2D array [[x_min, x_max], [y_min, y_max]].
+ * @returns {ParametricGeometry} The generated parametric geometry.
+ */
 function create_parameterization(function_to_draw, width_segments, height_segments, domain) {
     return new ParametricGeometry((u, v, target) => {
         const x = domain[0][0] + u * (domain[0][1] - domain[0][0]);
@@ -53,18 +76,33 @@ function create_parameterization(function_to_draw, width_segments, height_segmen
     }, width_segments, height_segments);
 }
 
+/**
+ * Calculates the visible domain of the camera based on its frustum and a specified distance.
+ *
+ * @param {THREE.Camera} camera - The camera used to calculate the visible domain.
+ * @param {number} z_dist - The distance along the Z-axis.
+ * @returns {Array<Array<number>>} The calculated visible domain as a 2D array [[x_min, x_max], [y_min, y_max]].
+ */
 function calculate_visible_domain(camera, z_dist) {
     const frustumHeight = Math.abs(2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * z_dist);
     const frustumWidth = Math.abs(frustumHeight * camera.aspect);
     const largest = Math.round(Math.max(frustumWidth, frustumHeight)) + 1;
-    // Overestimate the viewing volume
-    // console.log(largest);
     return [
         [-largest, largest],
         [-largest, largest]
-    ]
+    ];
 }
 
+/**
+ * Creates grid lines for visualizing a function over a domain.
+ *
+ * @param {Function} function_to_draw - The function to graph. It should take two arguments (x, y) and return a scalar value (z).
+ * @param {number} width_segments - The number of segments along the width.
+ * @param {number} height_segments - The number of segments along the height.
+ * @param {Array<Array<number>>} domain - The domain of the function to graph, as a 2D array [[x_min, x_max], [y_min, y_max]].
+ * @param {boolean} [draw_axes_only=false] - Whether to draw only the axes lines.
+ * @returns {THREE.LineSegments} The generated grid lines.
+ */
 function create_gridlines(function_to_draw, width_segments, height_segments, domain, draw_axes_only = false) {
     const gridGeometry = new THREE.BufferGeometry();
     const vertices = [];
@@ -128,19 +166,38 @@ function create_gridlines(function_to_draw, width_segments, height_segments, dom
     return gridLines;
 }
 
-
-// Function to compute the distance from the camera to the origin
+/**
+ * Computes the distance from the camera to the origin.
+ *
+ * @param {THREE.Camera} camera - The camera from which to measure the distance.
+ * @returns {number} The distance from the camera to the origin.
+ */
 export function distance_to_origin(camera) {
     const origin = new THREE.Vector3(0, 0, 0);
     const cameraPosition = camera.position.clone();
-    const distance = cameraPosition.distanceTo(origin);
-    return distance;
+    return cameraPosition.distanceTo(origin);
 }
 
+/**
+ * Draws a 3D function as a surface mesh in the scene.
+ *
+ * @param {Object} engine - The rendering engine, including the scene, camera, and renderer.
+ * @param {Function} function_to_draw - The function to graph. It should take two arguments (x, y) and return a scalar value (z).
+ * @param {number} [width_segments=null] - The number of segments along the width.
+ * @param {number} [height_segments=null] - The number of segments along the height.
+ * @param {Array<Array<number>>} [domain=null] - The domain of the function to graph, as a 2D array [[x_min, x_max], [y_min, y_max]].
+ * @param {number} [color=0x00ffff] - The color of the surface mesh.
+ * @returns {Object} An object containing the `update` method to refresh the graph.
+ */
 export function draw_3d_function(engine, function_to_draw, width_segments = null, height_segments = null, domain = null, color = 0x00ffff) {
     let mesh;
     let gridLines;
 
+    /**
+     * Updates the graph based on the function and parameters provided.
+     *
+     * @param {boolean} [changed=true] - Whether the graph should be updated.
+     */
     function update(changed = true) {
         if (!changed) {
             return;
@@ -150,7 +207,6 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
 
         // Create a clipping plane at the specified height
         const clip_height = distance_to_origin(engine.camera) / 2;
-        // console.log(clip_height);
         const clipping_plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), clip_height);
 
         // Enable clipping in the renderer
@@ -164,18 +220,18 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
 
         // Set default sample number for widthSegments and heightSegments
         let curr_width_segments = width_segments;
-        let curr_height_segments= height_segments;
+        let curr_height_segments = height_segments;
         if (width_segments == null) {
             curr_width_segments = Math.min(
-                10*Math.ceil(curr_domain[0][1] - curr_domain[0][0]),
+                10 * Math.ceil(curr_domain[0][1] - curr_domain[0][0]),
                 1000
-            )
+            );
         }
         if (height_segments == null) {
             curr_height_segments = Math.min(
-                10*Math.ceil(curr_domain[0][1] - curr_domain[0][0]),
+                10 * Math.ceil(curr_domain[0][1] - curr_domain[0][0]),
                 1000
-            )
+            );
         }
 
         if (mesh) {
@@ -205,7 +261,7 @@ export function draw_3d_function(engine, function_to_draw, width_segments = null
         // Create and add gridlines
         let draw_axis_only = false;
         if (clip_height > 20) {
-            draw_axis_only = true
+            draw_axis_only = true;
         }
         gridLines = create_gridlines(function_to_draw, curr_width_segments, curr_height_segments, curr_domain, draw_axis_only);
         engine.scene.add(gridLines);

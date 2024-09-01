@@ -13,7 +13,16 @@ import {
 } from "./utils_exp_and_log_obfuscated.js";
 import {get_default_lil_gui, refresh_displays} from "./utils_three.js";
 
+/**
+ * Base class for polynomial spline segments. Should not be instantiated directly.
+ * @abstract
+ */
 export class PolynomialSplineSegmentBaseClass {
+    /**
+     * Creates a new polynomial spline segment.
+     * @param {number} dim - The dimension of the spline (e.g., 2 for 2D, 3 for 3D).
+     * @param {number[][]} [init_control_point_mat=null] - Initial control points for the spline segment.
+     */
     constructor(dim, init_control_point_mat=null) {
         if (new.target === PolynomialSplineSegmentBaseClass) {
             throw new Error("PolynomialSplineSegmentBaseClass is a template class and cannot be instantiated directly.");
@@ -39,6 +48,11 @@ export class PolynomialSplineSegmentBaseClass {
         }
     }
 
+    /**
+     * Interpolates the spline at a given parameter t.
+     * @param {number} t - The parameter t, between 0 and 1.
+     * @returns {number[][]} The interpolated point.
+     */
     interpolate(t) {
         if (t < 0 || t > 1) {
             throw new Error('t must be between 0 and 1');
@@ -49,6 +63,12 @@ export class PolynomialSplineSegmentBaseClass {
         return this.interpolate_from_a_coeffs(t, a_coeffs);
     }
 
+    /**
+     * Interpolates the spline using precomputed coefficients.
+     * @param {number} t - The parameter t, between 0 and 1.
+     * @param {number[][]} a_coeffs - The precomputed coefficients.
+     * @returns {number[][]} The interpolated point.
+     */
     interpolate_from_a_coeffs(t, a_coeffs) {
         if (t < 0 || t > 1) {
             throw new Error('t must be between 0 and 1');
@@ -64,10 +84,18 @@ export class PolynomialSplineSegmentBaseClass {
         return out;
     }
 
+    /**
+     * Computes the coefficients matrix for the spline segment.
+     * @returns {number[][]} The coefficients matrix.
+     */
     get_a_coeffs_matrix() {
         return mul_matrix_matrix(this.B, this.control_point_mat);
     }
 
+    /**
+     * Computes the coefficients for the spline segment.
+     * @returns {number[][]} The coefficients.
+     */
     get_a_coeffs() {
         let a_coeffs_matrix = this.get_a_coeffs_matrix();
 
@@ -79,6 +107,11 @@ export class PolynomialSplineSegmentBaseClass {
         return a_coeffs;
     }
 
+    /**
+     * Updates a control point of the spline.
+     * @param {number} control_point_idx - The index of the control point to update.
+     * @param {number[]} new_control_point - The new control point.
+     */
     update_control_point(control_point_idx, new_control_point) {
         if(control_point_idx >= this.control_point_mat.length) {
             throw new Error('control_point_idx is too large');
@@ -92,190 +125,360 @@ export class PolynomialSplineSegmentBaseClass {
         this.control_point_mat[control_point_idx] = new_control_point;
     }
 
+    /**
+     * Returns the B matrix for the spline segment.
+     * @abstract
+     * @returns {number[][]} The B matrix.
+     */
     get_B_matrix() {
         throw new Error("Method 'get_B_matrix()' must be implemented in the derived class.");
     }
 
+    /**
+     * Returns the number of control points per segment.
+     * @abstract
+     * @returns {number} The number of control points per segment.
+     */
     get_num_control_points_per_segment() {
         throw new Error("Method 'get_num_control_points_per_segment()' must be implemented in the derived class.");
     }
 
+    /**
+     * Returns the type of spline segment.
+     * @abstract
+     * @returns {string} The type of the spline segment.
+     */
     get_segment_type_string() {
         throw new Error("Method 'get_segment_type_string()' must be implemented in the derived class.");
     }
 }
 
+/**
+ * Represents a linear spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class LinearSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * @inheritdoc
+     */
     constructor(dim, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate(t) {
         return super.interpolate(t);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate_from_a_coeffs(t, a_coeffs) {
         return super.interpolate_from_a_coeffs(t, a_coeffs);
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [1, 0], [-1, 1] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 2;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'linear';
     }
 }
 
+/**
+ * Represents a quadratic spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class QuadraticSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * @inheritdoc
+     */
     constructor(dim, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate(t) {
         return super.interpolate(t);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate_from_a_coeffs(t, a_coeffs) {
         return super.interpolate_from_a_coeffs(t, a_coeffs);
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [1, 0, 0], [-3, 4, -1], [2, -4, 2] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 3;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'quadratic';
     }
 }
 
+/**
+ * Represents a Hermite spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class HermiteSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * @inheritdoc
+     */
     constructor(dim, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate(t) {
         return super.interpolate(t);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate_from_a_coeffs(t, a_coeffs) {
         return super.interpolate_from_a_coeffs(t, a_coeffs);
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [1, 0, 0, 0], [0, 1, 0, 0], [-3, -2, 3, -1], [2, 1, -2, 1] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 4;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'hermite';
     }
 }
 
+/**
+ * Represents a natural spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class NaturalSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * @inheritdoc
+     */
     constructor(dim, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate(t) {
         return super.interpolate(t);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate_from_a_coeffs(t, a_coeffs) {
         return super.interpolate_from_a_coeffs(t, a_coeffs);
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0.5, 0], [-1, -1, -0.5, 1] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 4;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'natural';
     }
 }
 
+/**
+ * Represents a Cardinal spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class CardinalSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * Creates a new Cardinal spline segment.
+     * @param {number} dim - The dimension of the spline (e.g., 2 for 2D, 3 for 3D).
+     * @param {number} w - The tension parameter for the Cardinal spline.
+     * @param {number[][]} [init_control_point_mat=null] - Initial control points for the spline segment.
+     */
     constructor(dim, w, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
 
         this.w = w;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [0, 1, 0, 0], [(this.w - 1)/2, 0, (1-this.w)/2, 0], [1 - this.w, 0.5*(-this.w - 5), this.w + 2, (this.w - 1)/2], [(this.w-1)/2, (this.w+3)/2, 0.5*(-this.w - 3), (1-this.w)/2] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 4;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'cardinal';
     }
 }
 
+/**
+ * Represents a Catmull-Rom spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class CatmullRomSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * @inheritdoc
+     */
     constructor(dim, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [0, 1, 0, 0], [-0.5, 0, 0.5, 0], [1, 5.0/2.0, 2, -0.5], [-0.5, 3/2, -3/2, 0.5] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 4;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'catmull_rom';
     }
 }
 
+/**
+ * Represents a Bezier spline segment.
+ * @extends PolynomialSplineSegmentBaseClass
+ */
 export class BezierSplineSegment extends PolynomialSplineSegmentBaseClass {
+    /**
+     * @inheritdoc
+     */
     constructor(dim, init_control_point_mat=null) {
         super(dim, init_control_point_mat);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate(t) {
         return super.interpolate(t);
     }
 
+    /**
+     * @inheritdoc
+     */
     interpolate_from_a_coeffs(t, a_coeffs) {
         return super.interpolate_from_a_coeffs(t, a_coeffs);
     }
 
+    /**
+     * @inheritdoc
+     */
     get_B_matrix() {
         return [ [1, 0, 0, 0], [-3, 3, 0, 0], [3, -6, 3, 0], [-1,3,-3,1] ];
     }
 
+    /**
+     * @inheritdoc
+     */
     get_num_control_points_per_segment() {
         return 4;
     }
 
+    /**
+     * @inheritdoc
+     */
     get_segment_type_string() {
         return 'bezier';
     }
 }
 
+/**
+ * Helper class for visualizing polynomial spline segments using THREE.js.
+ */
 export class PolynomialSplineSegmentVisualizerHelper {
     constructor() { }
 
+    /**
+     * Creates a new default visualizer helper.
+     * @param {PolynomialSplineSegmentBaseClass} polynomial_spline_segment - The polynomial spline segment to visualize.
+     * @param {Object} three_engine - The THREE.js engine.
+     * @param {Object} transform_gizmo_engine - The engine for managing transform gizmos.
+     * @returns {PolynomialSplineSegmentVisualizerHelper} The visualizer helper.
+     */
     static new_default(polynomial_spline_segment, three_engine, transform_gizmo_engine) {
         let out = new PolynomialSplineSegmentVisualizerHelper();
 
@@ -358,7 +561,14 @@ export class PolynomialSplineSegmentVisualizerHelper {
     */
 }
 
+/**
+ * Visualizer for polynomial spline segments using THREE.js.
+ */
 export class PolynomialSplineSegmentVisualizer {
+    /**
+     * Creates a new visualizer for polynomial spline segments.
+     * @param {PolynomialSplineSegmentVisualizerHelper} helper - The helper for visualizing the spline segment.
+     */
     constructor(helper) {
         let gui = get_default_lil_gui();
 
@@ -391,6 +601,10 @@ export class PolynomialSplineSegmentVisualizer {
         this.helper = helper;
     }
 
+    /**
+     * Function to be called in the THREE.js animation loop to render the spline segment.
+     * @param {Object} three_engine - The THREE.js engine.
+     */
     three_loop_function(three_engine) {
         this.helper.transform_gizmo_engine.set_visibility_of_all_gizmos(three_engine, this.settings.gizmos_visible);
 
@@ -483,25 +697,51 @@ export class PolynomialSplineSegmentVisualizer {
     }
 }
 
+/**
+ * Represents a polynomial-based spline, which is composed of multiple spline segments.
+ */
 export class PolynomialBasedSpline {
+    /**
+     * Creates a new polynomial-based spline.
+     * @param {PolynomialSplineSegmentBaseClass[]} segments - An array of spline segments that make up the spline.
+     */
     constructor(segments) {
         this.segments = segments;
     }
 
+    /**
+     * Interpolates the spline at a given parameter t.
+     * @param {number} t - The parameter value for interpolation.
+     * @returns {number[]} The interpolated point on the spline.
+     */
     interpolate(t) {
         let idx = Math.floor(t);
         let segment = this.segments[idx];
         return segment.interpolate(t - idx);
     }
 
+    /**
+     * Returns the maximum interpolation value, which corresponds to the number of segments in the spline.
+     * @returns {number} The maximum value of t for interpolation.
+     */
     max_interpolation_value() {
         return this.segments.length;
     }
 }
 
+/**
+ * Helper class for visualizing polynomial splines using THREE.js.
+ */
 export class PolynomialSplineVisualizerHelper {
     constructor() { }
 
+    /**
+     * Creates a new default visualizer helper.
+     * @param {PolynomialBasedSpline} spline - The polynomial spline to visualize.
+     * @param {Object} three_engine - The THREE.js engine.
+     * @param {Object} transform_gizmo_engine - The engine for managing transform gizmos.
+     * @returns {PolynomialSplineVisualizerHelper} The visualizer helper.
+     */
     static new_default(spline, three_engine, transform_gizmo_engine) {
         let out = new PolynomialSplineVisualizerHelper();
 
@@ -518,7 +758,20 @@ export class PolynomialSplineVisualizerHelper {
     }
 }
 
+/**
+ * Visualizer for polynomial splines using THREE.js.
+ */
 export class PolynomialSplineVisualizer {
+    /**
+     * Creates a new visualizer for polynomial splines.
+     * @param {PolynomialSplineVisualizerHelper} helper - The helper for visualizing the spline.
+     * @param {boolean} [arclength_vis=false] - Whether to enable arclength visualization.
+     * @param {boolean} [init_display_sphere=true] - Whether to display the interpolation sphere initially.
+     * @param {boolean} [init_display_archlength_sphere=false] - Whether to display the arclength sphere initially.
+     * @param {boolean} [freeze_display_sphere=false] - Whether to freeze the display of the interpolation sphere.
+     * @param {boolean} [freeze_display_arclength_sphere=false] - Whether to freeze the display of the arclength sphere.
+     * @param {boolean} [disable_play_stop=false] - Whether to disable the play and stop buttons.
+     */
     constructor(helper, arclength_vis=false, init_display_sphere=true, init_display_archlength_sphere=false, freeze_display_sphere=false, freeze_display_arclength_sphere=false, disable_play_stop=false) {
         let gui = get_default_lil_gui();
 
@@ -598,6 +851,10 @@ export class PolynomialSplineVisualizer {
         this.helper = helper;
     }
 
+    /**
+     * Function to be called in the THREE.js animation loop to render the spline.
+     * @param {Object} three_engine - The THREE.js engine.
+     */
     three_loop_function(three_engine) {
         this.helper.transform_gizmo_engine.set_visibility_of_all_gizmos(three_engine, this.settings.gizmos_visible);
 
@@ -709,11 +966,20 @@ export class PolynomialSplineVisualizer {
     }
 }
 
+/**
+ * Represents a B-spline.
+ */
 export class BSpline {
     /*
     To make a closed loop of degree d, make sure your control points
     repeat the first d control points at the end.  This is not done automatically
     */
+    /**
+     * Creates a new B-spline.
+     * @param {number[][]} control_points - The control points of the B-spline.
+     * @param {number} d - The degree of the spline.
+     * @param {boolean} [closed=false] - Whether the spline forms a closed loop.
+     */
     constructor(control_points, d, closed=false) {
         this.control_points = control_points.slice();
         // this.control_points_original = control_points.slice();
@@ -741,6 +1007,13 @@ export class BSpline {
         }
     }
 
+    /**
+     * Generates a new B-spline with random control points.
+     * @param {number} num_points - The number of control points.
+     * @param {number} dimension_of_control_points - The dimension of each control point.
+     * @param {number} d - The degree of the spline.
+     * @returns {BSpline} The generated B-spline.
+     */
     static new_random_points(num_points, dimension_of_control_points, d) {
         let control_points = [];
         for(let i = 0; i < num_points; i++) {
@@ -753,6 +1026,11 @@ export class BSpline {
         return new BSpline(control_points, d);
     }
 
+    /**
+     * Updates a control point in the B-spline.
+     * @param {number} control_point_idx - The index of the control point to update.
+     * @param {number[]} new_control_point - The new control point.
+     */
     update_control_point(control_point_idx, new_control_point) {
         if(control_point_idx >= this.control_points.length) {
             throw new Error('control_point_idx is too large');
@@ -761,6 +1039,10 @@ export class BSpline {
         this.control_points[control_point_idx] = new_control_point;
     }
 
+    /**
+     * Updates the degree of the B-spline.
+     * @param {number} new_d - The new degree of the spline.
+     */
     update_d(new_d) {
         // this.control_points = [];
         // this.control_points = this.control_points_original.slice();
@@ -786,6 +1068,13 @@ export class BSpline {
         }
     }
 
+    /**
+     * The Cox-de Boor recursion formula.
+     * @param {number} t - The parameter value.
+     * @param {number} i - The index.
+     * @param {number} k - The current recursion level.
+     * @returns {number} The computed Cox-de Boor value.
+     */
     cox_de_boor(t, i, k) {
         if (k === 1) {
             if(this.j[i] <= t && t < this.j[i+1]) { return 1; }
@@ -799,6 +1088,12 @@ export class BSpline {
         }
     }
 
+    /**
+     * Interpolates the B-spline using the Cox-de Boor vector.
+     * @param {number} t - The parameter value.
+     * @param {number[]} cox_de_boor_vec - The Cox-de Boor vector.
+     * @returns {number[]} The interpolated point.
+     */
     interpolate_from_cox_de_boor_vec(t, cox_de_boor_vec) {
         // t = this.remap_t_based_on_range(t);
 
@@ -812,6 +1107,11 @@ export class BSpline {
         return out;
     }
 
+    /**
+     * Interpolates the B-spline at a given parameter t.
+     * @param {number} t - The parameter value for interpolation.
+     * @returns {number[]} The interpolated point.
+     */
     interpolate(t) {
         // t = this.remap_t_based_on_range(t);
 
@@ -823,6 +1123,11 @@ export class BSpline {
         return this.interpolate_from_cox_de_boor_vec(t, cox_de_boor_vec);
     }
 
+    /**
+     * Computes the Cox-de Boor vector for a given t.
+     * @param {number} t - The parameter value.
+     * @returns {number[]} The Cox-de Boor vector.
+     */
     get_cox_de_boor_vec(t) {
         t = this.remap_t_based_on_range(t);
 
@@ -833,6 +1138,11 @@ export class BSpline {
         return out;
     }
 
+    /**
+     * Remaps the parameter t based on the current range of the spline.
+     * @param {number} t - The parameter value.
+     * @returns {number} The remapped value of t.
+     */
     remap_t_based_on_range(t) {
         let range = this.get_range();
         let min = range[0];
@@ -842,6 +1152,10 @@ export class BSpline {
         return (1-ratio)*min + ratio*max;
     }
 
+    /**
+     * Gets the current range of the B-spline.
+     * @returns {number[]} An array containing the minimum and maximum values of the range.
+     */
     get_range() {
         if(this.closed) {
             return [ (this.d-1) * 0.5, this.n-1 - ((this.d-1)*0.5) ];
@@ -851,7 +1165,16 @@ export class BSpline {
     }
 }
 
+/**
+ * Helper class for visualizing B-splines using THREE.js.
+ */
 export class BSplineVisualizerHelper {
+    /**
+     * Creates a new visualizer helper for a B-spline.
+     * @param {BSpline} spline - The B-spline to visualize.
+     * @param {Object} three_engine - The THREE.js engine.
+     * @param {Object} transform_gizmo_engine - The engine for managing transform gizmos.
+     */
     constructor(spline, three_engine, transform_gizmo_engine) {
         this.spline = spline;
         this.three_engine = three_engine;
@@ -906,7 +1229,16 @@ export class BSplineVisualizerHelper {
     }
 }
 
+/**
+ * Visualizer for B-splines using THREE.js.
+ */
 export class BSplineVisualizer {
+    /**
+     * Creates a new visualizer for a B-spline.
+     * @param {BSplineVisualizerHelper} helper - The helper for visualizing the spline.
+     * @param {number} [init_d=1] - The initial degree of the spline.
+     * @param {boolean} [freeze_d=false] - Whether to freeze the degree of the spline.
+     */
     constructor(helper, init_d=1, freeze_d=false) {
         this.helper = helper;
 
@@ -942,6 +1274,12 @@ export class BSplineVisualizer {
         this.gui = gui;
     }
 
+    /**
+     * Creates a new visualizer for a B-spline.
+     * @param {BSplineVisualizerHelper} helper - The helper for visualizing the spline.
+     * @param {number} [init_d=1] - The initial degree of the spline.
+     * @param {boolean} [freeze_d=false] - Whether to freeze the degree of the spline.
+     */
     three_loop_function(three_engine) {
         this.helper.spline.update_d(this.settings.d);
         this.helper.transform_gizmo_engine.set_visibility_of_all_gizmos(three_engine, this.settings.gizmos_visible);
@@ -1000,6 +1338,14 @@ export class BSplineVisualizer {
      }
 }
 
+/**
+ * Computes arclength parameterization for a spline and interpolates the spline at the given parameter.
+ * @param {number} t - The parameter value.
+ * @param {PolynomialBasedSpline} spline - The spline to interpolate.
+ * @param {number} spline_max_t - The maximum value of t for the spline.
+ * @param {Array} components - The arclength components computed from `get_arclength_components`.
+ * @returns {number[]} The interpolated point on the spline.
+ */
 export function arclength_parameterize_spline_interpolate(t, spline, spline_max_t, components) {
     /*
     let prev_point = spline.interpolate(0);
@@ -1048,6 +1394,13 @@ export function arclength_parameterize_spline_interpolate(t, spline, spline_max_
     return spline.interpolate(interpolated_t);
 }
 
+/**
+ * Computes arclength components for a given spline.
+ * @param {PolynomialBasedSpline} spline - The spline for which to compute the components.
+ * @param {number} spline_max_t - The maximum value of t for the spline.
+ * @param {number} [num_samples=50] - The number of samples for arclength parameterization.
+ * @returns {Array} An array containing the accumulated points, distances, ts, and total distance.
+ */
 export function get_arclength_components(spline, spline_max_t, num_samples=50) {
     let prev_point = spline.interpolate(0);
     let accumulated_points = [];

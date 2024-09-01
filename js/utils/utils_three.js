@@ -22,7 +22,20 @@ import {
     unroll_matrix_to_list
 } from "./utils_math.js";
 
+/**
+ * Represents the core engine for handling Three.js scenes, including loading models and drawing geometries.
+ * @class
+ */
 export class ThreeEngine {
+    /**
+     * Creates an instance of ThreeEngine.
+     * @constructor
+     * @param {THREE.Scene} scene - The Three.js scene object.
+     * @param {THREE.Camera} camera - The Three.js camera object.
+     * @param {THREE.Renderer} renderer - The Three.js renderer object.
+     * @param {OrbitControls} controls - The orbit controls for the camera.
+     * @param {Stats} stats - The stats module for performance monitoring.
+     */
     constructor(scene, camera, renderer, controls, stats) {
         this.scene = scene;
         this.camera = camera;
@@ -142,6 +155,11 @@ export class ThreeEngine {
         return new ThreeEngine(scene, camera, renderer, controls, stats);
     }
 
+    /**
+     * Creates a default 2D ThreeEngine instance with an orthographic camera.
+     * @static
+     * @returns {ThreeEngine} A new ThreeEngine instance.
+     */
     static new_default_2d() {
         let engine = ThreeEngine.#new_default_generic(true);
         z_up_set_object_position(engine.camera, 0, 0, 5);
@@ -153,6 +171,15 @@ export class ThreeEngine {
         return engine;
     }
 
+    /**
+     * Creates a default 3D ThreeEngine instance.
+     * @static
+     * @param {number} [camera_x=3] - The x-coordinate of the camera position.
+     * @param {number} [camera_y=2] - The y-coordinate of the camera position.
+     * @param {number} [camera_z=1] - The z-coordinate of the camera position.
+     * @param {boolean} [orthographic_camera=false] - Whether to use an orthographic camera.
+     * @returns {ThreeEngine} A new ThreeEngine instance.
+     */
     static new_default_3d(camera_x=3, camera_y=2, camera_z=1, orthographic_camera=false) {
         let engine = ThreeEngine.#new_default_generic(orthographic_camera);
         z_up_set_object_position(engine.camera, camera_x, camera_y, camera_z);
@@ -166,6 +193,9 @@ export class ThreeEngine {
         return engine;
     }
 
+    /**
+     * Handles window resize for an orthographic camera.
+     */
     on_window_resize_orthographic() {
         let frustumSize = 10;
         let aspect = window.innerWidth / window.innerHeight;
@@ -182,6 +212,15 @@ export class ThreeEngine {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    /**
+     * Adds an STL mesh object to the scene.
+     * @async
+     * @param {string} path - The path to the STL file.
+     * @param {number} [color=0x00ff00] - The color of the mesh.
+     * @param {number} [opacity=1.0] - The opacity of the mesh.
+     * @param {boolean} [transparent=false] - Whether the mesh is transparent.
+     * @returns {Promise<number>} The index of the added mesh object.
+     */
     async add_stl_mesh_object(path, color= 0x00ff00, opacity = 1.0, transparent = false) {
         try {
             const mesh = await load_stl(path, this.scene, false, color, opacity, transparent);
@@ -208,6 +247,12 @@ export class ThreeEngine {
         }
     }
 
+    /**
+     * Adds a GLTF mesh object to the scene.
+     * @async
+     * @param {string} path - The path to the GLTF file.
+     * @returns {Promise<number[]>} An array of indices of the added mesh objects.
+     */
     async add_gltf_mesh_object(path) {
         try {
             let out_idxs = [];
@@ -240,6 +285,12 @@ export class ThreeEngine {
         }
     }
 
+    /**
+     * Adds a Collada mesh object to the scene.
+     * @async
+     * @param {string} path - The path to the Collada file.
+     * @returns {Promise<number[]>} An array of indices of the added mesh objects.
+     */
     async add_collada_mesh_object(path) {
         try {
             let out_idxs = [];
@@ -284,18 +335,39 @@ export class ThreeEngine {
         }
     }
 
+    /**
+     * Adds a Suzanne monkey mesh object to the scene.
+     * @param {number} [color=0x00ff00] - The color of the mesh.
+     * @returns {number} The index of the added mesh object.
+     */
     add_suzanne_monkey_as_mesh_object(color=0x00ff00) {
         return this.add_obj_from_string_mesh_object(suzanne_monkey_obj_string(), color);
     }
 
+    /**
+     * Adds a high-resolution Suzanne monkey mesh object to the scene.
+     * @param {number} [color=0x00ff00] - The color of the mesh.
+     * @returns {number} The index of the added mesh object.
+     */
     add_suzanne_monkey_highres_as_mesh_object(color=0x00ff00) {
         return this.add_obj_from_string_mesh_object(suzanne_monkey_highres_obj_string(), color);
     }
 
+    /**
+     * Adds a standard 2D shape mesh object to the scene.
+     * @param {number} [color=0x00ff00] - The color of the mesh.
+     * @returns {number} The index of the added mesh object.
+     */
     add_standard2Dshape_as_mesh_object(color=0x00ff00) {
         return this.add_obj_from_string_mesh_object(standard2Dshape_obj_string(), color);
     }
 
+    /**
+     * Adds a mesh object to the scene from an OBJ string.
+     * @param {string} string - The OBJ string data.
+     * @param {number} [color=0x00ff00] - The color of the mesh.
+     * @returns {number} The index of the added mesh object.
+     */
     add_obj_from_string_mesh_object(string, color=0x00ff00) {
         const mesh = load_obj_from_string(this.scene, string, color);
         // mesh.setRotationFromQuaternion(new THREE.Quaternion());
@@ -318,6 +390,12 @@ export class ThreeEngine {
         return idx;
     }
 
+    /**
+     * Adds a cube mesh object to the scene.
+     * @param {number} size - The size of the cube.
+     * @param {number} [color=0x00ff00] - The color of the cube.
+     * @returns {number} The index of the added cube mesh object.
+     */
     add_cube_as_mesh_object(size, color=0x00ff00) {
         let mesh = spawn_cube_base(this.scene, [0,0,0], size, size, size, color, undefined, undefined);
 
@@ -340,6 +418,10 @@ export class ThreeEngine {
         return idx;
     }
 
+    /**
+     * Adds a torus knot mesh object to the scene.
+     * @returns {number} The index of the added mesh object.
+     */
     add_torus_knot_as_mesh_object() {
         const geometry = new THREE.TorusKnotGeometry( 10, 3, 100, 16 );
         const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
@@ -361,6 +443,10 @@ export class ThreeEngine {
         return idx;
     }
 
+    /**
+     * Adds a torus mesh object to the scene.
+     * @returns {number} The index of the added mesh object.
+     */
     add_torus_as_mesh_object() {
         const geometry = new THREE.TorusGeometry(1, 0.4, 16, 100);
         const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
@@ -382,6 +468,12 @@ export class ThreeEngine {
         return idx;
     }
 
+    /**
+     * Adds a gizmo controller to the scene.
+     * @param {Array<number>} position - The position of the gizmo.
+     * @param {Array<number>} wxyz_quaternion - The quaternion rotation of the gizmo.
+     * @returns {number} The index of the added gizmo controller.
+     */
     add_gizmo_controller(position, wxyz_quaternion) {
         let idx = undefined;
         for (let i= 0; i < this.gizmo_controller_objects.length; i++) {
@@ -421,11 +513,20 @@ export class ThreeEngine {
         return idx;
     }
 
+    /**
+     * Removes a gizmo controller from the scene.
+     * @param {number} idx - The index of the gizmo controller to remove.
+     */
     remove_gizmo_controller(idx) {
         this.gizmo_controller_objects[idx].visible = false;
         this.gizmo_controllers[idx].visible = false;
     }
 
+    /**
+     * Gets the position of a gizmo controller.
+     * @param {number} idx - The index of the gizmo controller.
+     * @returns {Array<number>} The position of the gizmo controller.
+     */
     get_position_of_gizmo_controller(idx) {
         let curr = this.gizmo_controller_objects[idx];
         let position = curr.position;
@@ -433,6 +534,15 @@ export class ThreeEngine {
         return convert_y_up_array_to_z_up_array(p);
     }
 
+    /**
+     * Draws a debug line in the scene.
+     * @param {Array<number>} start_point - The start point of the line.
+     * @param {Array<number>} end_point - The end point of the line.
+     * @param {boolean} [render_through_other_objects=false] - Whether the line should render through other objects.
+     * @param {number} [width=0.01] - The width of the line.
+     * @param {number} [color=0x0000ff] - The color of the line.
+     * @param {number} [opacity=1.0] - The opacity of the line.
+     */
     draw_debug_line(start_point, end_point, render_through_other_objects=false, width=0.01, color=0x0000ff, opacity=1.0) {
         // let y_up_start_point = convert_z_up_array_to_y_up_array(start_point);
         /*
@@ -468,6 +578,14 @@ export class ThreeEngine {
         this.num_line_objects_used_on_curr_frame++;
     }
 
+    /**
+     * Draws a debug sphere in the scene.
+     * @param {Array<number>} center_point - The center point of the sphere.
+     * @param {number} radius - The radius of the sphere.
+     * @param {number} [color=0x00ff00] - The color of the sphere.
+     * @param {number} [opacity=1.0] - The opacity of the sphere.
+     * @param {number} [num_segments=10] - The number of segments for the sphere geometry.
+     */
     draw_debug_sphere(center_point, radius, color=0x00ff00, opacity=1.0, num_segments=10) {
         // let a = convert_z_up_array_to_y_up_array(center_point);
         // let a = unroll_matrix_to_list(center_point);
@@ -490,6 +608,15 @@ export class ThreeEngine {
         this.num_sphere_objects_used_on_curr_frame++;
     }
 
+    /**
+     * Draws a debug box in the scene.
+     * @param {Array<number>} center_point - The center point of the box.
+     * @param {Array<number>} half_extents - The half extents of the box.
+     * @param {THREE.Quaternion} quaternion - The rotation of the box.
+     * @param {number} [color=0x00ffff] - The color of the box.
+     * @param {number} [opacity=1.0] - The opacity of the box.
+     * @returns {THREE.Mesh} The box mesh object.
+     */
     draw_debug_box(center_point, half_extents, quaternion, color=0x00ffff, opacity=1.0) {
         // initialize box objects if needed
         if (!this.box_objects) {
@@ -520,6 +647,14 @@ export class ThreeEngine {
         return box_object;
     }
 
+    /**
+     * Draws a debug cone in the scene.
+     * @param {Array<number>} start_point - The start point of the cone.
+     * @param {Array<number>} end_point - The end point of the cone.
+     * @param {number} radius - The base radius of the cone.
+     * @param {number} [color=0x0000ff] - The color of the cone.
+     * @param {number} [opacity=1.0] - The opacity of the cone.
+     */
     draw_debug_cone(start_point, end_point, radius, color=0x0000ff, opacity=1.0) {
         if (this.num_cone_objects_used_on_curr_frame >= this.cone_objects.length) {
             for (let i = 0; i < 500; i++) {
@@ -546,6 +681,15 @@ export class ThreeEngine {
         this.num_cone_objects_used_on_curr_frame++;
     }
 
+    /**
+     * Draws a debug vector (line with arrow) in the scene.
+     * @param {Array<number>} start_point - The start point of the vector.
+     * @param {Array<number>} end_point - The end point of the vector.
+     * @param {number} [tail_width=0.01] - The width of the vector tail.
+     * @param {number} [arrow_height=0.15] - The height of the arrowhead.
+     * @param {number} [color=0x0000ff] - The color of the vector.
+     * @param {number} [opacity=1.0] - The opacity of the vector.
+     */
     draw_debug_vector(start_point, end_point, tail_width = 0.01, arrow_height = 0.15, color=0x0000ff, opacity=1.0) {
         let a = convert_array_to_threejs_vector3(convert_2array_to_3array(unroll_matrix_to_list(start_point)));
         let b = convert_array_to_threejs_vector3(unroll_matrix_to_list(end_point));
@@ -561,6 +705,16 @@ export class ThreeEngine {
         this.draw_debug_cone(e, convert_2array_to_3array(unroll_matrix_to_list(end_point)), tail_width*3, color, opacity);
     }
 
+    /**
+     * Draws a debug plane in the scene.
+     * @param {Array<number>} center_point - The center point of the plane.
+     * @param {Array<number>} span_vec_1 - The first span vector for the plane.
+     * @param {Array<number>} span_vec_2 - The second span vector for the plane.
+     * @param {number} [width=1] - The width of the plane.
+     * @param {number} [height=1] - The height of the plane.
+     * @param {number} [color=0x0000ff] - The color of the plane.
+     * @param {number} [opacity=1.0] - The opacity of the plane.
+     */
     draw_debug_plane(center_point, span_vec_1, span_vec_2, width=1, height=1, color=0x0000ff, opacity=1.0) {
         if (this.num_plane_objects_used_on_curr_frame >= this.plane_objects.length) {
             for (let i = 0; i < 500; i++) {
@@ -576,6 +730,18 @@ export class ThreeEngine {
         this.num_plane_objects_used_on_curr_frame++;
     }
 
+    /**
+     * Draws a debug grid plane in the scene.
+     * @param {Array<number>} center_point - The center point of the grid plane.
+     * @param {Array<number>} span_vec_1 - The first span vector for the grid plane.
+     * @param {Array<number>} span_vec_2 - The second span vector for the grid plane.
+     * @param {number} [width=1] - The width of the grid plane.
+     * @param {number} [height=1] - The height of the grid plane.
+     * @param {number} [color=0x222222] - The color of the grid plane.
+     * @param {number} [opacity=0.1] - The opacity of the grid plane.
+     * @param {number} [grid_line_spacing=0.25] - The spacing between grid lines.
+     * @param {boolean} [draw_plane=true] - Whether to draw the plane itself.
+     */
     draw_debug_grid_plane(center_point, span_vec_1, span_vec_2, width=1, height=1, color=0x222222, opacity= 0.1, grid_line_spacing = 0.25, draw_plane=true) {
         if(draw_plane) {
             this.draw_debug_plane(center_point, span_vec_1, span_vec_2, width, height, color, opacity);
@@ -640,6 +806,15 @@ export class ThreeEngine {
 
     }
 
+    /**
+     * Draws a debug number line in the scene.
+     * @param {Array<number>} center_point - The center point of the number line.
+     * @param {Array<number>} [span_vec_1=[[0], [0], [1]]] - The span vector for the number line.
+     * @param {number} [half_length=1] - The half-length of the number line.
+     * @param {number} [width=0.01] - The width of the number line.
+     * @param {number} [color=0x222222] - The color of the number line.
+     * @param {number} [tick_dis=0.1] - The distance between ticks on the number line.
+     */
     draw_debug_number_line(center_point, span_vec_1=[[0], [0], [1]], half_length=1, width=0.01, color=0x222222, tick_dis=0.1) {
         let span_vec_normalized = normalized_matrix(span_vec_1);
         let span_vec_scaled1 = mul_matrix_scalar(span_vec_normalized, half_length);
@@ -661,6 +836,17 @@ export class ThreeEngine {
         }
     }
 
+    /**
+     * Draws a debug scalar vector quaternion in the scene.
+     * @param {Array<number>} quaternion - The quaternion to represent.
+     * @param {number} [vector_color=0x222222] - The color of the vector.
+     * @param {Array<number>} [number_line_span_vec_1=[[0], [0], [1]]] - The span vector for the number line.
+     * @param {number} [number_line_width=0.01] - The width of the number line.
+     * @param {number} [number_line_color=0x222222] - The color of the number line.
+     * @param {number} [tick_dis=0.1] - The distance between ticks on the number line.
+     * @param {number} [opacity=1.0] - The opacity of the objects.
+     * @param {number} [tail_width=0.04] - The width of the vector tail.
+     */
     draw_debug_scalar_vector_quaternion(quaternion, vector_color=0x222222, number_line_span_vec_1=[[0], [0], [1]],  number_line_width=0.01, number_line_color=0x222222, tick_dis=0.1, opacity=1.0, tail_width = 0.04) {
         this.draw_debug_vector([0,0,0], quaternion[1], tail_width, undefined, vector_color, opacity);
         this.draw_debug_number_line(quaternion[1], number_line_span_vec_1, Math.max(Math.abs(quaternion[0])*1.2, 0.3), number_line_width, number_line_color, tick_dis);
@@ -670,11 +856,31 @@ export class ThreeEngine {
         this.draw_debug_sphere(add_matrix_matrix(quaternion[1], span_vec_scaled1), 0.04, vector_color);
     }
 
+    /**
+     * Draws a debug WXYZ quaternion in the scene.
+     * @param {Array<number>} quaternion - The quaternion to represent.
+     * @param {number} [vector_color=0x222222] - The color of the vector.
+     * @param {Array<number>} [number_line_span_vec_1=[[0], [0], [1]]] - The span vector for the number line.
+     * @param {number} [number_line_width=0.01] - The width of the number line.
+     * @param {number} [number_line_color=0x222222] - The color of the number line.
+     * @param {number} [tick_dis=0.1] - The distance between ticks on the number line.
+     * @param {number} [opacity=1.0] - The opacity of the objects.
+     * @param {number} [tail_width=0.04] - The width of the vector tail.
+     */
     draw_debug_wxyz_quaternion(quaternion, vector_color=0x222222, number_line_span_vec_1=[[0], [0], [1]],  number_line_width=0.01, number_line_color=0x222222, tick_dis=0.1, opacity=1.0, tail_width = 0.04) {
         let q = [quaternion[0], [quaternion[1], quaternion[2], quaternion[3]]];
         this.draw_debug_scalar_vector_quaternion(q, vector_color, number_line_span_vec_1, number_line_width, number_line_color, tick_dis, opacity, tail_width);
     }
 
+    /**
+     * Spawns a parametric geometry object in the scene.
+     * @param {Object} parametric_geometry_object - The parametric geometry object to spawn.
+     * @param {number} [slices=100] - The number of slices.
+     * @param {number} [stacks=100] - The number of stacks.
+     * @param {number} [color=0x0000ff] - The color of the geometry.
+     * @param {number} [opacity=1.0] - The opacity of the geometry.
+     * @returns {THREE.Mesh} The spawned parametric geometry mesh.
+     */
     spawn_parametric_geometry(parametric_geometry_object, slices=100, stacks=100, color=0x0000ff, opacity=1.0) {
         let geometry = new ParametricGeometry(parametric_geometry_object.get_three_parametric_function(), 200, 200);
 
@@ -689,38 +895,81 @@ export class ThreeEngine {
         return mesh;
     }
 
+    /**
+     * Toggles the visibility of a mesh object.
+     * @param {number} idx - The index of the mesh object.
+     */
     toggle_mesh_object_visibility(idx) {
         this.mesh_objects[idx].visible = !this.mesh_objects[idx].visible;
     }
 
+    /**
+     * Toggles the visibility of a mesh object's wireframe.
+     * @param {number} idx - The index of the mesh object's wireframe.
+     */
     toggle_mesh_object_wireframe_visibility(idx) {
         this.mesh_object_wireframes[idx].visible = !this.mesh_object_wireframes[idx].visible;
     }
 
+    /**
+     * Sets the visibility of a mesh object.
+     * @param {number} idx - The index of the mesh object.
+     * @param {boolean} visible - Whether the mesh object should be visible.
+     */
     set_mesh_object_visibility(idx, visible) {
         this.mesh_objects[idx].visible = visible;
     }
 
+    /**
+     * Sets the visibility of a mesh object's wireframe.
+     * @param {number} idx - The index of the mesh object's wireframe.
+     * @param {boolean} visible - Whether the wireframe should be visible.
+     */
     set_mesh_object_wireframe_visibility(idx, visible) {
         this.mesh_object_wireframes[idx].visible = visible;
     }
 
+    /**
+     * Gets the number of vertices in a mesh object.
+     * @param {number} idx - The index of the mesh object.
+     * @returns {number} The number of vertices in the mesh object.
+     */
     num_vertices_in_mesh_object(idx) {
         return this.get_local_vertex_positions_of_mesh_object(idx).length;
     }
 
+    /**
+     * Gets the local vertex positions of a mesh object.
+     * @param {number} idx - The index of the mesh object.
+     * @returns {Array<Array<number>>} The local vertex positions of the mesh object.
+     */
     get_local_vertex_positions_of_mesh_object(idx) {
         return this.mesh_objects_local_vertex_positions[idx];
     }
 
+    /**
+     * Gets the local vertex positions of a mesh object's wireframe.
+     * @param {number} idx - The index of the mesh object's wireframe.
+     * @returns {Array<Array<number>>} The local vertex positions of the mesh object's wireframe.
+     */
     get_local_vertex_positions_of_mesh_object_wireframe(idx) {
         return this.mesh_object_wireframes_local_vertex_positions[idx];
     }
 
+    /**
+     * Updates the vertex positions of a mesh object.
+     * @param {number} idx - The index of the mesh object.
+     * @param {Array<Array<number>>} new_vertex_positions - The new vertex positions.
+     */
     update_vertex_positions_of_mesh_object(idx, new_vertex_positions) {
         this.#update_vertex_positions_of_generic_mesh_object(this.mesh_objects[idx], new_vertex_positions);
     }
 
+    /**
+     * Updates the vertex positions of a mesh object's wireframe.
+     * @param {number} idx - The index of the mesh object's wireframe.
+     * @param {Array<Array<number>>} new_vertex_positions - The new vertex positions.
+     */
     update_vertex_positions_of_mesh_object_wireframe(idx, new_vertex_positions) {
         this.#update_vertex_positions_of_generic_mesh_object(this.mesh_object_wireframes[idx], new_vertex_positions);
     }
@@ -783,14 +1032,26 @@ export class ThreeEngine {
 }
 */
 
+    /**
+     * Gets the elapsed time since the engine was started.
+     * @returns {number} The elapsed time in seconds.
+     */
     get_time_elapsed() {
         return this.clock.getElapsedTime()
     }
 
+    /**
+     * Gets the delta time between the last frame and the current frame.
+     * @returns {number} The delta time in seconds.
+     */
     get_delta_time_from_last_frame() {
         return this.clock.getDelta();
     }
 
+    /**
+     * Starts the animation loop.
+     * @param {Function} f - The function to call on each frame.
+     */
     animation_loop(f) {
         const loop = () => {
             this.stats.begin();
@@ -831,7 +1092,11 @@ export class ThreeEngine {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/**
+ * Adjusts the Three.js canvas to be responsive to window resizing.
+ * @param {THREE.Camera} camera - The Three.js camera.
+ * @param {THREE.Renderer} renderer - The Three.js renderer.
+ */
 export function threejs_responsive_canvas(camera, renderer) {
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -840,6 +1105,12 @@ export function threejs_responsive_canvas(camera, renderer) {
     });
 }
 
+/**
+ * Loads a GLTF model and adds it to the scene.
+ * @param {string} path - The path to the GLTF file.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @returns {Promise<THREE.Mesh>} A promise that resolves with the loaded mesh.
+ */
 export function load_gltf(path, scene) {
     return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
@@ -880,6 +1151,12 @@ export function load_gltf(path, scene) {
     });
 }
 
+/**
+ * Loads a GLTF model safely and adds all meshes to the scene.
+ * @param {string} path - The path to the GLTF file.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @returns {Promise<THREE.Mesh[]>} A promise that resolves with an array of meshes.
+ */
 export function load_gltf_safely(path, scene) {
     return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
@@ -920,6 +1197,16 @@ export function load_gltf_safely(path, scene) {
     });
 }
 
+/**
+ * Loads an STL model and adds it to the scene.
+ * @param {string} path - The path to the STL file.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {boolean} [wireframe=false] - Whether to render the model as a wireframe.
+ * @param {number} [color=0x00ff00] - The color of the model.
+ * @param {number} [opacity=1.0] - The opacity of the model.
+ * @param {boolean} [transparent=false] - Whether the model is transparent.
+ * @returns {Promise<THREE.Mesh>} A promise that resolves with the loaded mesh.
+ */
 export function load_stl(path, scene, wireframe=false, color=0x00ff00, opacity = 1.0, transparent = false) {
     return new Promise((resolve, reject) => {
         const loader = new STLLoader();
@@ -945,6 +1232,12 @@ export function load_stl(path, scene, wireframe=false, color=0x00ff00, opacity =
     });
 }
 
+/**
+ * Loads a Collada model and adds it to the scene.
+ * @param {string} path - The path to the Collada file.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @returns {Promise<THREE.Mesh[]>} A promise that resolves with an array of meshes.
+ */
 export function load_collada(path, scene) {
     return new Promise((resolve, reject) => {
         const loader = new ColladaLoader();
@@ -988,6 +1281,13 @@ export function load_collada(path, scene) {
     });
 }
 
+/**
+ * Loads an OBJ model from a string and adds it to the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {string} string - The OBJ string data.
+ * @param {number} [color=0x00ff00] - The color of the model.
+ * @returns {THREE.Mesh} The loaded mesh.
+ */
 export function load_obj_from_string(scene, string, color=0x00ff00) {
     const loader = new OBJLoader();
     const object = loader.parse(string);
@@ -1017,7 +1317,17 @@ export function load_obj_from_string(scene, string, color=0x00ff00) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/**
+ * Spawns a line in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} start_point - The start point of the line.
+ * @param {Array<number>} end_point - The end point of the line.
+ * @param {boolean} [render_through_other_objects=false] - Whether the line should render through other objects.
+ * @param {number} [width=0.01] - The width of the line.
+ * @param {number} [color=0x0000ff] - The color of the line.
+ * @param {number} [opacity=1.0] - The opacity of the line.
+ * @returns {THREE.Mesh} The spawned line mesh.
+ */
 export function spawn_line_base(scene, start_point, end_point, render_through_other_objects=false, width=0.01, color=0x0000ff, opacity=1.0) {
     let path = new THREE.LineCurve3(
         new THREE.Vector3(start_point[0], start_point[1], start_point[2]),
@@ -1041,10 +1351,29 @@ export function spawn_line_base(scene, start_point, end_point, render_through_ot
     return tube;
 }
 
+/**
+ * Spawns a default line in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {boolean} [render_through_other_objects=false] - Whether the line should render through other objects.
+ * @param {number} [color=0x0000ff] - The color of the line.
+ * @param {number} [opacity=1.0] - The opacity of the line.
+ * @returns {THREE.Mesh} The spawned line mesh.
+ */
 export function spawn_line_default(scene, render_through_other_objects=false, color=0x0000ff, opacity=1.0) {
     return spawn_line_base(scene, convert_z_up_array_to_y_up_array([0,0,0]), convert_z_up_array_to_y_up_array([0,-1,0]), render_through_other_objects, 1.0, color, opacity);
 }
 
+/**
+ * Spawns a specific line in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} start_point - The start point of the line.
+ * @param {Array<number>} end_point - The end point of the line.
+ * @param {boolean} [render_through_other_objects=false] - Whether the line should render through other objects.
+ * @param {number} [width=0.01] - The width of the line.
+ * @param {number} [color=0x0000ff] - The color of the line.
+ * @param {number} [opacity=1.0] - The opacity of the line.
+ * @returns {THREE.Mesh} The spawned line mesh.
+ */
 export function spawn_line_specific(scene, start_point, end_point, render_through_other_objects=false, width=0.01, color=0x0000ff, opacity=1.0) {
     let line_object = spawn_line_default(scene, render_through_other_objects, color, opacity);
 
@@ -1053,6 +1382,16 @@ export function spawn_line_specific(scene, start_point, end_point, render_throug
     return line_object;
 }
 
+/**
+ * Sets the properties of a specific line in the scene.
+ * @param {THREE.Mesh} line_specific - The line mesh object.
+ * @param {Array<number>} start_point - The start point of the line.
+ * @param {Array<number>} end_point - The end point of the line.
+ * @param {boolean} [render_through_other_objects=false] - Whether the line should render through other objects.
+ * @param {number} [width=0.01] - The width of the line.
+ * @param {number} [color=0x0000ff] - The color of the line.
+ * @param {number} [opacity=1.0] - The opacity of the line.
+ */
 export function set_line_specific(line_specific, start_point, end_point, render_through_other_objects=false, width=0.01, color=0x0000ff, opacity=1.0) {
     let y_up_end_point = convert_z_up_array_to_y_up_array(convert_2array_to_3array(unroll_matrix_to_list(end_point)));
     let a = convert_2array_to_3array(unroll_matrix_to_list(start_point));
@@ -1101,6 +1440,17 @@ export function spawn_static_parametric_curve(scene, parametric_curve_function, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Spawns a sphere in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} center_point - The center point of the sphere.
+ * @param {number} radius - The radius of the sphere.
+ * @param {number} [num_segments=10] - The number of segments for the sphere geometry.
+ * @param {number} [color=0x00ff00] - The color of the sphere.
+ * @param {number} [opacity=1.0] - The opacity of the sphere.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned sphere mesh.
+ */
 export function spawn_sphere_base(scene, center_point, radius, num_segments=10, color=0x00ff00, opacity=1.0, flat_material=true) {
     let geometry = new THREE.SphereGeometry(radius, num_segments, num_segments);
     let material;
@@ -1121,16 +1471,45 @@ export function spawn_sphere_base(scene, center_point, radius, num_segments=10, 
     return sphere;
 }
 
+/**
+ * Spawns a default sphere in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} [num_segments=10] - The number of segments for the sphere geometry.
+ * @param {number} [color=0x00ff00] - The color of the sphere.
+ * @param {number} [opacity=1.0] - The opacity of the sphere.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned sphere mesh.
+ */
 export function spawn_sphere_default(scene, num_segments=10, color=0x00ff00, opacity=1.0, flat_material=true) {
     return spawn_sphere_base(scene, [0,0,0], 1, num_segments, color, opacity, flat_material);
 }
 
+/**
+ * Spawns a specific sphere in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} center_point - The center point of the sphere.
+ * @param {number} radius - The radius of the sphere.
+ * @param {number} [num_segments=10] - The number of segments for the sphere geometry.
+ * @param {number} [color=0x00ff00] - The color of the sphere.
+ * @param {number} [opacity=1.0] - The opacity of the sphere.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned sphere mesh.
+ */
 export function spawn_sphere_specific(scene, center_point, radius, num_segments=10, color=0x00ff00, opacity=1.0, flat_material=true) {
     let sphere_object = spawn_sphere_default(scene, num_segments, color, opacity, flat_material);
     set_sphere_specific(sphere_object, center_point, radius, num_segments, color, opacity);
     return sphere_object;
 }
 
+/**
+ * Sets the properties of a specific sphere in the scene.
+ * @param {THREE.Mesh} sphere_specific - The sphere mesh object.
+ * @param {Array<number>} center_point - The center point of the sphere.
+ * @param {number} radius - The radius of the sphere.
+ * @param {number} [num_segments=10] - The number of segments for the sphere geometry.
+ * @param {number} [color=0x00ff00] - The color of the sphere.
+ * @param {number} [opacity=1.0] - The opacity of the sphere.
+ */
 export function set_sphere_specific(sphere_specific, center_point, radius, num_segments=10, color=0x00ff00, opacity=1.0) {
     let a = convert_2array_to_3array(unroll_matrix_to_list(center_point));
     sphere_specific.visible = true;
@@ -1143,6 +1522,18 @@ export function set_sphere_specific(sphere_specific, center_point, radius, num_s
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Spawns a cube in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} center_point - The center point of the cube.
+ * @param {number} [width=1] - The width of the cube.
+ * @param {number} [height=1] - The height of the cube.
+ * @param {number} [depth=1] - The depth of the cube.
+ * @param {number} [color=0x00ff00] - The color of the cube.
+ * @param {number} [opacity=1.0] - The opacity of the cube.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned cube mesh.
+ */
 export function spawn_cube_base(scene, center_point, width=1, height=1, depth=1, color=0x00ff00, opacity=1.0, flat_material=true) {
     let geometry = new THREE.BoxGeometry( width, height, depth );
     let material;
@@ -1160,6 +1551,13 @@ export function spawn_cube_base(scene, center_point, width=1, height=1, depth=1,
     return cube;
 }
 
+/**
+ * Spawns a default cube in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} color - The color of the cube.
+ * @param {number} opacity - The opacity of the cube.
+ * @returns {THREE.Mesh} The spawned cube mesh.
+ */
 export function spawn_box_default(scene, color, opacity) {
     // Create a box geometry
     const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -1171,6 +1569,18 @@ export function spawn_box_default(scene, color, opacity) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Spawns a cone in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} radius - The base radius of the cone.
+ * @param {number} height - The height of the cone.
+ * @param {number} radial_segments - The number of radial segments for the cone.
+ * @param {number} height_segments - The number of height segments for the cone.
+ * @param {number} [color=0x0000ff] - The color of the cone.
+ * @param {number} [opacity=1.0] - The opacity of the cone.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned cone mesh.
+ */
 export function spawn_cone_base(scene, radius, height, radial_segments, height_segments, color=0x0000ff, opacity=1.0, flat_material=true) {
     const geometry = new THREE.ConeGeometry( radius, height, radial_segments, height_segments );
     let material;
@@ -1187,16 +1597,44 @@ export function spawn_cone_base(scene, radius, height, radial_segments, height_s
     return cone;
 }
 
+/**
+ * Spawns a default cone in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} [color=0x0000ff] - The color of the cone.
+ * @param {number} [opacity=1.0] - The opacity of the cone.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned cone mesh.
+ */
 export function spawn_cone_default(scene, color=0x0000ff, opacity=1.0, flat_material=true) {
     return spawn_cone_base(scene, 1, 1, 10, 1, color, opacity, flat_material);
 }
 
+/**
+ * Spawns a specific cone in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} start_point - The start point of the cone.
+ * @param {Array<number>} end_point - The end point of the cone.
+ * @param {number} radius - The base radius of the cone.
+ * @param {number} [color=0x0000ff] - The color of the cone.
+ * @param {number} [opacity=1.0] - The opacity of the cone.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned cone mesh.
+ */
 export function spawn_cone_specific(scene, start_point, end_point, radius, color=0x0000ff, opacity=1.0, flat_material=true) {
     let cone_object = spawn_cone_default(scene, color, opacity, flat_material);
     set_cone_specific(cone_object, start_point, end_point, radius,color, opacity, flat_material);
     return cone_object;
 }
 
+/**
+ * Sets the properties of a specific cone in the scene.
+ * @param {THREE.Mesh} cone_specific - The cone mesh object.
+ * @param {Array<number>} start_point - The start point of the cone.
+ * @param {Array<number>} end_point - The end point of the cone.
+ * @param {number} radius - The base radius of the cone.
+ * @param {number} [color=0x0000ff] - The color of the cone.
+ * @param {number} [opacity=1.0] - The opacity of the cone.
+ */
 export function set_cone_specific(cone_specific, start_point, end_point, radius, color=0x0000ff, opacity=1.0) {
     let aa = unroll_matrix_to_list(start_point);
     let bb = unroll_matrix_to_list(end_point);
@@ -1221,6 +1659,16 @@ export function set_cone_specific(cone_specific, start_point, end_point, radius,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Spawns a plane in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} [width=1] - The width of the plane.
+ * @param {number} [height=1] - The height of the plane.
+ * @param {number} [color=0x0000ff] - The color of the plane.
+ * @param {number} [opacity=1.0] - The opacity of the plane.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned plane mesh.
+ */
 export function spawn_plane_base(scene, width=1, height=1, color=0x0000ff, opacity=1.0, flat_material=true) {
     /*
     let geometry = new THREE.BufferGeometry();
@@ -1250,16 +1698,48 @@ export function spawn_plane_base(scene, width=1, height=1, color=0x0000ff, opaci
     return plane;
 }
 
+/**
+ * Spawns a default plane in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} [color=0x0000ff] - The color of the plane.
+ * @param {number} [opacity=1.0] - The opacity of the plane.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned plane mesh.
+ */
 export function spawn_plane_default(scene, color=0x0000ff, opacity=1.0, flat_material=true) {
     return spawn_plane_base(scene, 1, 1, color, opacity, flat_material);
 }
 
+/**
+ * Spawns a specific plane in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} center_point - The center point of the plane.
+ * @param {Array<number>} span_vec_1 - The first span vector for the plane.
+ * @param {Array<number>} span_vec_2 - The second span vector for the plane.
+ * @param {number} [width=1] - The width of the plane.
+ * @param {number} [height=1] - The height of the plane.
+ * @param {number} [color=0x0000ff] - The color of the plane.
+ * @param {number} [opacity=1.0] - The opacity of the plane.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned plane mesh.
+ */
 export function spawn_plane_specific(scene, center_point, span_vec_1, span_vec_2, width=1, height=1, color=0x0000ff, opacity=1.0, flat_material=true) {
     let square_object = spawn_plane_default(scene, color, opacity, flat_material);
     set_plane_specific(square_object, center_point, span_vec_1, span_vec_2, width, height, color, opacity);
     return square_object;
 }
 
+/**
+ * Sets the properties of a specific plane in the scene.
+ * @param {THREE.Mesh} plane_specific - The plane mesh object.
+ * @param {Array<number>} center_point - The center point of the plane.
+ * @param {Array<number>} span_vec_1 - The first span vector for the plane.
+ * @param {Array<number>} span_vec_2 - The second span vector for the plane.
+ * @param {number} [width=1] - The width of the plane.
+ * @param {number} [height=1] - The height of the plane.
+ * @param {number} [color=0x0000ff] - The color of the plane.
+ * @param {number} [opacity=1.0] - The opacity of the plane.
+ */
 export function set_plane_specific(plane_specific, center_point, span_vec_1, span_vec_2, width=1, height=1, color=0x0000ff, opacity=1.0) {
     center_point = convert_z_up_array_to_y_up_array(convert_2array_to_3array(unroll_matrix_to_list(center_point)));
     let span_vec_1_positive = convert_z_up_array_to_y_up_array(convert_2array_to_3array(unroll_matrix_to_list(mul_matrix_scalar(normalized_matrix(span_vec_1), width))));
@@ -1287,6 +1767,14 @@ export function set_plane_specific(plane_specific, center_point, span_vec_1, spa
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Retrieves the local vertex positions of an object.
+ * @param {THREE.BufferGeometry} object - The object geometry.
+ * @param {THREE.Quaternion} base_quaternion - The base quaternion for rotation.
+ * @param {boolean} [z_up=true] - Whether the object's up-axis is z.
+ * @param {boolean} [is2D=false] - Whether the object is 2D.
+ * @returns {Array<Array<number>>} The local vertex positions.
+ */
 export function get_local_vertex_positions_of_object(object, base_quaternion, z_up=true, is2D=false) {
     let out = [];
     const positionAttribute = object.attributes.position;
@@ -1313,6 +1801,13 @@ export function get_local_vertex_positions_of_object(object, base_quaternion, z_
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Sets the position of an object in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the position for.
+ * @param {number} x - The x-coordinate of the position.
+ * @param {number} y - The y-coordinate of the position.
+ * @param {number} z - The z-coordinate of the position.
+ */
 export function z_up_set_object_position(object3D, x, y, z) {
     let a = convert_z_up_array_to_y_up_array([x,y,z]);
     if(object3D) {
@@ -1320,6 +1815,13 @@ export function z_up_set_object_position(object3D, x, y, z) {
     }
 }
 
+/**
+ * Incrementally updates the position of an object in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to update the position for.
+ * @param {number} delta_x - The incremental change in the x-coordinate.
+ * @param {number} delta_y - The incremental change in the y-coordinate.
+ * @param {number} delta_z - The incremental change in the z-coordinate.
+ */
 export function z_up_incremental_position_object_update(object3D, delta_x, delta_y, delta_z) {
     let a = convert_z_up_array_to_y_up_array([delta_x,delta_y,delta_z]);
     object3D.position.x += a[0];
@@ -1327,11 +1829,23 @@ export function z_up_incremental_position_object_update(object3D, delta_x, delta
     object3D.position.z += a[2];
 }
 
+/**
+ * Sets the scale of an object in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the scale for.
+ * @param {number} sx - The scale factor in the x direction.
+ * @param {number} sy - The scale factor in the y direction.
+ * @param {number} sz - The scale factor in the z direction.
+ */
 export function z_up_set_scale(object3D, sx, sy, sz) {
     let a = convert_z_up_array_to_y_up_array([sx,sy,sz]);
     object3D.scale.set(a[0], a[1], a[2]);
 }
 
+/**
+ * Sets the pose of an object from an SE3 matrix in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the pose for.
+ * @param {Array<Array<number>>} SE3_matrix - The SE3 matrix representing the pose.
+ */
 export function z_up_set_object_pose_from_SE3_matrix(object3D, SE3_matrix) {
     let s = SE3_matrix;
     let m = new THREE.Matrix4(s[0][0], s[0][1], s[0][2], s[0][3],
@@ -1348,18 +1862,38 @@ export function z_up_set_object_pose_from_SE3_matrix(object3D, SE3_matrix) {
     z_up_set_object_position(object3D, s[0][3], s[1][3], s[2][3]);
 }
 
+/**
+ * Sets the pose of an object from an SO3 matrix and position in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the pose for.
+ * @param {Array<Array<number>>} SO3_matrix - The SO3 matrix representing the rotation.
+ * @param {Array<number>} position - The position vector.
+ */
 export function z_up_set_object_pose_from_SO3_matrix_and_position(object3D, SO3_matrix, position) {
     z_up_set_object_rotation_from_SO3_matrix(object3D, SO3_matrix);
     position = unroll_matrix_to_list(position);
     z_up_set_object_position(object3D, position[0], position[1], position[2]);
 }
 
+/**
+ * Sets the pose of an object from an SO2 matrix and position in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the pose for.
+ * @param {Array<Array<number>>} SO2_matrix - The SO2 matrix representing the rotation.
+ * @param {Array<number>} position - The position vector.
+ */
 export function z_up_set_object_pose_from_SO2_matrix_and_position(object3D, SO2_matrix, position) {
     z_up_set_object_rotation_from_SO2_matrix(object3D, SO2_matrix);
     position = unroll_matrix_to_list(position);
     z_up_set_object_position(object3D, position[0], position[1], 0.001);
 }
 
+/**
+ * Sets the rotation of an object from a quaternion in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the rotation for.
+ * @param {number} w - The w-component of the quaternion.
+ * @param {number} x - The x-component of the quaternion.
+ * @param {number} y - The y-component of the quaternion.
+ * @param {number} z - The z-component of the quaternion.
+ */
 export function z_up_set_object_rotation_from_quaternion(object3D, w, x, y, z) {
     let a = convert_wxyz_quaternion_array_to_threejs_quaternion([w,x,y,z]);
     let b = convert_z_up_threejs_quaternion_to_y_up_threejs_quaternion(a);
@@ -1368,6 +1902,11 @@ export function z_up_set_object_rotation_from_quaternion(object3D, w, x, y, z) {
     }
 }
 
+/**
+ * Sets the rotation of an object from an SO3 matrix in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the rotation for.
+ * @param {Array<Array<number>>} SO3_matrix - The SO3 matrix representing the rotation.
+ */
 export function z_up_set_object_rotation_from_SO3_matrix(object3D, SO3_matrix) {
     let s = SO3_matrix;
     let m = new THREE.Matrix4(
@@ -1383,18 +1922,38 @@ export function z_up_set_object_rotation_from_SO3_matrix(object3D, SO3_matrix) {
     // z_up_set_object_rotation_from_quaternion(object3D, q.w, q.x, q.y, q.z);
 }
 
+/**
+ * Sets the rotation of an object from an SO2 matrix in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the rotation for.
+ * @param {Array<Array<number>>} SO2_matrix - The SO2 matrix representing the rotation.
+ */
 export function z_up_set_object_rotation_from_SO2_matrix(object3D, SO2_matrix) {
     let m = SO2_matrix;
     let mm = [[m[0][0], m[0][1], 0], [m[1][0], m[1][1], 0], [0,0,1]];
     z_up_set_object_rotation_from_SO3_matrix(object3D, mm);
 }
 
+/**
+ * Sets the rotation of an object from Euler angles in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the rotation for.
+ * @param {number} rx - The rotation angle around the x-axis.
+ * @param {number} ry - The rotation angle around the y-axis.
+ * @param {number} rz - The rotation angle around the z-axis.
+ */
 export function z_up_set_object_rotation_from_xyz_euler_angles(object3D, rx, ry, rz) {
     let q = new THREE.Quaternion();
     q.setFromEuler( new THREE.Euler(rx, ry, rz, 'XYZ') );
     z_up_set_object_rotation_from_quaternion(object3D, q.w, q.x, q.y, q.z);
 }
 
+/**
+ * Sets the rotation of an object from an axis-angle representation in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to set the rotation for.
+ * @param {number} x - The x-component of the axis.
+ * @param {number} y - The y-component of the axis.
+ * @param {number} z - The z-component of the axis.
+ * @param {number} angle - The rotation angle.
+ */
 export function z_up_set_object_rotation_from_axis_angle(object3D, x, y, z, angle) {
     let axis = new THREE.Vector3(x, y, z);
     let q = new THREE.Quaternion();
@@ -1404,16 +1963,31 @@ export function z_up_set_object_rotation_from_axis_angle(object3D, x, y, z, angl
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Retrieves the position of an object in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to get the position from.
+ * @returns {Array<Array<number>>} The position of the object.
+ */
 export function z_up_get_object_position(object3D) {
     let p = [object3D.position.x, object3D.position.y, object3D.position.z];
     let a = convert_y_up_array_to_z_up_array(p);
     return [[a[0]], [a[1]], [a[2]]];
 }
 
+/**
+ * Retrieves the pose of an object as an SO3 matrix and position in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to get the pose from.
+ * @returns {Array<Array<number>>} The SO3 matrix and position.
+ */
 export function z_up_get_object_pose_as_SO3_matrix_and_position(object3D) {
     return [ z_up_get_object_rotation_as_SO3_matrix(object3D), z_up_get_object_position(object3D) ];
 }
 
+/**
+ * Retrieves the pose of an object as an SO2 matrix and position in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to get the pose from.
+ * @returns {Array<Array<number>>} The SO2 matrix and position.
+ */
 export function z_up_get_object_pose_as_SO2_matrix_and_position(object3D) {
     let res = z_up_get_object_pose_as_SO3_matrix_and_position(object3D);
     let r = res[0];
@@ -1422,6 +1996,11 @@ export function z_up_get_object_pose_as_SO2_matrix_and_position(object3D) {
     return [ [ [r[0][0], r[0][1]], [r[1][0], r[1][1]] ], [ [t[0][0]], [t[1][0]] ] ];
 }
 
+/**
+ * Retrieves the pose of an object as an SE3 matrix in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to get the pose from.
+ * @returns {Array<Array<number>>} The SE3 matrix representing the pose.
+ */
 export function z_up_get_object_pose_as_SE3_matrix(object3D) {
     let [r, p] =  z_up_get_object_pose_as_SO3_matrix_and_position(object3D);
 
@@ -1433,6 +2012,11 @@ export function z_up_get_object_pose_as_SE3_matrix(object3D) {
     ]
 }
 
+/**
+ * Retrieves the rotation of an object as an SO3 matrix in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to get the rotation from.
+ * @returns {Array<Array<number>>} The SO3 matrix representing the rotation.
+ */
 export function z_up_get_object_rotation_as_SO3_matrix(object3D) {
     let quaternion = convert_y_up_threejs_quaternion_to_z_up_threejs_quaternion(object3D.quaternion);
 
@@ -1446,6 +2030,11 @@ export function z_up_get_object_rotation_as_SO3_matrix(object3D) {
     ];
 }
 
+/**
+ * Retrieves the rotation of an object as a WXYZ quaternion in a Z-up coordinate system.
+ * @param {THREE.Object3D} object3D - The object to get the rotation from.
+ * @returns {Array<number>} The quaternion representing the rotation.
+ */
 export function z_up_get_object_rotation_as_wxyz_quaternion(object3D) {
     let quaternion = object3D.quaternion;
     let q = convert_y_up_threejs_quaternion_to_z_up_threejs_quaternion(quaternion);
@@ -1459,11 +2048,21 @@ function get_matrix4_element(matrix, row, column) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Converts a 2D array to a 3D array.
+ * @param {Array<number>} array - The 2D array to convert.
+ * @returns {Array<number>} The converted 3D array.
+ */
 export function convert_2array_to_3array(array) {
     if(array.length === 3) { return array; }
     else { return [array[0], array[1], 0.01] }
 }
 
+/**
+ * Converts an array to a Three.js Vector3.
+ * @param {Array<number>} array - The array to convert.
+ * @returns {THREE.Vector3} The Three.js Vector3.
+ */
 export function convert_array_to_threejs_vector3(array) {
     if(array.length === 2) {
         return new THREE.Vector3(array[0], array[1], 0);
@@ -1472,28 +2071,58 @@ export function convert_array_to_threejs_vector3(array) {
     }
 }
 
+/**
+ * Converts a Three.js Vector3 to an array.
+ * @param {THREE.Vector3} vector3 - The Three.js Vector3 to convert.
+ * @returns {Array<number>} The array representation of the vector.
+ */
 export function convert_threejs_vector3_to_array(vector3) {
     return [vector3.x, vector3.y, vector3.z];
 }
 
+/**
+ * Converts a WXYZ quaternion array to a Three.js quaternion.
+ * @param {Array<number>} array - The WXYZ quaternion array to convert.
+ * @returns {THREE.Quaternion} The Three.js quaternion.
+ */
 export function convert_wxyz_quaternion_array_to_threejs_quaternion(array) {
     let q = new THREE.Quaternion();
     q.set(array[1], array[2], array[3], array[0]);
     return q;
 }
 
+/**
+ * Converts a Three.js quaternion to a WXYZ quaternion array.
+ * @param {THREE.Quaternion} quaternion - The Three.js quaternion to convert.
+ * @returns {Array<number>} The WXYZ quaternion array.
+ */
 export function convert_threejs_quaternion_to_wxyz_quaternion_array(quaternion) {
     return [quaternion.w, quaternion.x, quaternion.y, quaternion.z];
 }
 
+/**
+ * Converts a Y-up array to a Z-up array.
+ * @param {Array<number>} array - The Y-up array to convert.
+ * @returns {Array<number>} The Z-up array.
+ */
 export function convert_y_up_array_to_z_up_array(array) {
     return [array[0], -array[2], array[1]];
 }
 
+/**
+ * Converts a Z-up array to a Y-up array.
+ * @param {Array<number>} array - The Z-up array to convert.
+ * @returns {Array<number>} The Y-up array.
+ */
 export function convert_z_up_array_to_y_up_array(array) {
     return [array[0], array[2], -array[1]]
 }
 
+/**
+ * Converts a Z-up Three.js quaternion to a Y-up Three.js quaternion.
+ * @param {THREE.Quaternion} quaternion - The Z-up quaternion to convert.
+ * @returns {THREE.Quaternion} The Y-up quaternion.
+ */
 export function convert_z_up_threejs_quaternion_to_y_up_threejs_quaternion(quaternion) {
     const q = new THREE.Quaternion();
     q.setFromAxisAngle(new THREE.Vector3(1.,0.,0.), -Math.PI/2.0);
@@ -1501,6 +2130,11 @@ export function convert_z_up_threejs_quaternion_to_y_up_threejs_quaternion(quate
     return out;
 }
 
+/**
+ * Converts a Y-up Three.js quaternion to a Z-up Three.js quaternion.
+ * @param {THREE.Quaternion} quaternion - The Y-up quaternion to convert.
+ * @returns {THREE.Quaternion} The Z-up quaternion.
+ */
 export function convert_y_up_threejs_quaternion_to_z_up_threejs_quaternion(quaternion) {
     const q = new THREE.Quaternion();
     q.setFromAxisAngle(new THREE.Vector3(1.,0.,0.), Math.PI/2.0);
@@ -1508,6 +2142,11 @@ export function convert_y_up_threejs_quaternion_to_z_up_threejs_quaternion(quate
     return out;
 }
 
+/**
+ * Converts a Three.js Matrix3 to a Three.js quaternion.
+ * @param {THREE.Matrix3} matrix3 - The Three.js Matrix3 to convert.
+ * @returns {THREE.Quaternion} The Three.js quaternion.
+ */
 export function convert_threejs_matrix3_to_threejs_quaternion(matrix3) {
     var matrix4 = new THREE.Matrix4();
 

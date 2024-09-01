@@ -19,8 +19,16 @@ import {
 } from "./utils_math.js";
 import {optimization_gradient_descent, optimization_powell} from "./utils_optimization.js";
 
+/**
+ * Base class for creating specific parametric curves in 3D space.
+ * This is a template class and should not be instantiated directly.
+ */
 export class ParametricCurveBaseClass {
     constructor() {
+        /**
+         * Initializes the raw parametric function.
+         * @type {Function}
+         */
         if (new.target === ParametricCurveBaseClass) {
             throw new Error("ParametricCurveBaseClass is a template class and cannot be instantiated directly.");
         }
@@ -30,16 +38,31 @@ export class ParametricCurveBaseClass {
 
     // returns a function that takes in one parameter (u) that will vary on the range 0-1 and returns a
     // point in space [x, y, z].
+    /**
+     * Abstract method to return a function that represents the parametric curve.
+     * Should be implemented by derived classes.
+     * @abstract
+     * @returns {Function} A function that takes a parameter `u` and returns a point [x, y, z] on the curve.
+     */
     get_raw_parametric_function() {
         throw new Error("Method 'get_raw_parametric_function()' must be implemented in the derived class.");
     }
 
+    /**
+     * Converts the Z-up coordinate system to Y-up.
+     * @returns {Function} A function that takes a parameter `u` and returns a point [x, y, z] on the curve.
+     */
     get_raw_parametric_function_z_up() {
         return (u) => {
             return convert_z_up_array_to_y_up_array(this.raw_parametric_function(u));
         }
     }
 
+    /**
+     * Returns a normalized vector that spans the surface at a given point on the curve.
+     * @param {number} u - The parameter along the curve.
+     * @returns {number[][]} A normalized vector at the point `u`.
+     */
     get_surface_spanning_vector_at_point(u) {
         let uu = u + 0.0001;
 
@@ -49,10 +72,22 @@ export class ParametricCurveBaseClass {
         return normalized_matrix(sub_matrix_matrix(uu_point, point));
     }
 
+    /**
+     * Abstract method to return the ratio between world distance and parametric distance.
+     * Should be implemented by derived classes.
+     * @abstract
+     * @returns {number} The ratio between world distance and parametric distance.
+     */
     get_world_dis_to_parametric_dis_ratio() {
         throw new Error("Method 'get_world_dis_to_parametric_dis' must be implemented in the derived class.");
     }
 
+    /**
+     * Projects a given point onto the curve using optimization techniques.
+     * @param {number[]} point - The 3D point to project onto the curve.
+     * @param {number} starting_u - The initial guess for the parameter `u`.
+     * @returns {[number, number[]]} A tuple `[u, point_on_curve]` where `u` is the parameter on the curve and `point_on_curve` is the closest point on the curve.
+     */
     project_onto_curve(point, starting_u) {
         let f = x => {
             let a = this.raw_parametric_function(x[0]);
@@ -71,6 +106,12 @@ export class ParametricCurveBaseClass {
         return [ u, this.raw_parametric_function(u) ];
     }
 
+    /**
+     * Rotates a vector onto the curve, optimizing for the closest point on the curve.
+     * @param {number[]} starting_point - The starting point on the curve.
+     * @param {number[]} direction - The direction vector to rotate.
+     * @returns {[number[], number[]]} A tuple `[mapped_direction, new_point]` where `mapped_direction` is the rotated vector and `new_point` is the corresponding point on the curve.
+     */
     rotate_vector_onto_curve(starting_point, direction) {
         let f = x => {
             let theta = x[0];
@@ -102,19 +143,44 @@ export class ParametricCurveBaseClass {
         return [mapped_direction, new_point];
     }
 
+    /**
+     * Spawns a static visualization of the parametric curve in a Three.js scene.
+     * @param {Object} scene - The Three.js scene to add the curve to.
+     * @param {number} [num_points=100] - The number of points to render the curve with.
+     * @param {boolean} [render_through_other_objects=false] - Whether to render the curve through other objects.
+     * @param {number} [width=0.01] - The width of the curve.
+     * @param {number} [start_color=0x000000] - The starting color of the curve.
+     * @param {number} [end_color=0x000000] - The ending color of the curve.
+     * @param {number} [opacity=1.0] - The opacity of the curve.
+     */
     spawn_static_parametric_curve(scene, num_points=100, render_through_other_objects=false, width=0.01, start_color=0x000000, end_color= 0x000000, opacity=1.0) {
         spawn_static_parametric_curve(scene, this.raw_parametric_function, num_points, render_through_other_objects, width, start_color, end_color, opacity);
     }
 }
 
+/**
+ * A class to visualize parametric curves using Three.js.
+ */
 export class ParametricCurveThreeVisualizer {
+    /**
+     * Creates an instance of ParametricCurveThreeVisualizer.
+     * @param {ParametricCurveBaseClass} parametric_curve - An instance of a parametric curve.
+     */
     constructor(parametric_curve) {
         this.parametric_curve = parametric_curve;
+        /**
+         * Settings for the visualizer.
+         * @type {Object}
+         */
         this.settings = {
             u: 0.5,
             draw_tangent_space: false,
             tangent_space_vector_length: 0.25
         };
+        /**
+         * GUI for controlling the visualizer.
+         * @type {Object}
+         */
         let gui = get_default_lil_gui();
         gui.add(this.settings, 'u', 0, 1).name('u');
         gui.add(this.settings, 'draw_tangent_space').name('Draw Tangent Space');
@@ -122,6 +188,10 @@ export class ParametricCurveThreeVisualizer {
         this.gui = gui;
     }
 
+    /**
+     * The main loop function for updating the visualization.
+     * @param {Object} three_engine - The Three.js engine instance.
+     */
     three_loop_function(three_engine) {
         let point = this.parametric_curve.raw_parametric_function(this.settings.u);
         three_engine.draw_debug_sphere(point, 0.04, 0x00eeff);
@@ -133,15 +203,30 @@ export class ParametricCurveThreeVisualizer {
     }
 }
 
+/**
+ * A class that utilizes Lie groups and Lie algebras to manipulate and visualize parametric curves.
+ */
 export class ParametricCurveLieGroupAndAlgebraUtil {
+    /**
+     * Creates an instance of ParametricCurveLieGroupAndAlgebraUtil.
+     * @param {ParametricCurveBaseClass} parametric_curve - An instance of a parametric curve.
+     */
     constructor(parametric_curve) {
         this.parametric_curve = parametric_curve;
+        /**
+         * Settings for the visualizer.
+         * @type {Object}
+         */
         this.settings = {
             starting_u: 0.1,
             a:0.5,
             t:0,
             display_tangent_space: true
         }
+        /**
+         * GUI for controlling the visualizer.
+         * @type {Object}
+         */
         let gui = get_default_lil_gui();
         gui.add(this.settings, 'starting_u', 0.0000001, 1).name('Starting u').onChange(() => { this.outdated = true })
         gui.add(this.settings, 'a', 0.0001, 10.0).name('Tangent x').onChange(() => { this.outdated = true });
@@ -150,6 +235,10 @@ export class ParametricCurveLieGroupAndAlgebraUtil {
         this.gui = gui;
     }
 
+    /**
+     * The main loop function for updating the visualization.
+     * @param {Object} three_engine - The Three.js engine instance.
+     */
     three_loop_function(three_engine) {
         let origin_point = this.parametric_curve.raw_parametric_function(this.settings.starting_u);
         three_engine.draw_debug_sphere(origin_point, 0.01, 0x00eeff);
@@ -177,6 +266,15 @@ export class ParametricCurveLieGroupAndAlgebraUtil {
     }
 }
 
+/**
+ * Generates the points of the exponential map for a given parametric curve and parameter t.
+ * @param {ParametricCurveBaseClass} parametric_surface - The parametric curve object.
+ * @param {number} t - The interpolation parameter.
+ * @param {number[][]} exp_0_points - The initial exponential points.
+ * @param {number[][]} exp_x_points - The exponential points with parameter x.
+ * @param {number} [segment_length=0.035] - The length of each segment.
+ * @returns {number[][]} The list of points representing the exponential map.
+ */
 export function get_curve_exp_tx_points(parametric_surface, t, exp_0_points, exp_x_points, segment_length= 0.035) {
     let out = [exp_0_points[0].slice()];
 
@@ -222,6 +320,14 @@ export function get_curve_exp_0_points(parametric_curve, a, segment_length=0.035
 */
 
 // da should be in real world distance, not parameter distance
+/**
+ * Generates the points of the exponential map at the initial parameter u=0.
+ * @param {ParametricCurveBaseClass} parametric_curve - The parametric curve object.
+ * @param {number} starting_u - The starting parameter u.
+ * @param {number} da - The change in parameter distance.
+ * @param {number} [segment_length=0.035] - The length of each segment.
+ * @returns {number[][]} The list of points representing the exponential map at u=0.
+ */
 export function get_curve_exp_0_points(parametric_curve, starting_u, da, segment_length=0.035) {
     let ss = parametric_curve.get_surface_spanning_vector_at_point(starting_u);
     let raw_parametric_function = parametric_curve.raw_parametric_function;
@@ -286,6 +392,14 @@ export function get_curve_exp_x_points(parametric_curve, a, segment_length=0.035
 */
 
 // da should be in real world distance, not parameter distance
+/**
+ * Generates the points of the exponential map at a given parameter x.
+ * @param {ParametricCurveBaseClass} parametric_curve - The parametric curve object.
+ * @param {number} starting_u - The starting parameter u.
+ * @param {number} da - The change in parameter distance.
+ * @param {number} [segment_length=0.035] - The length of each segment.
+ * @returns {number[][]} The list of points representing the exponential map at x.
+ */
 export function get_curve_exp_x_points(parametric_curve, starting_u, da, segment_length=0.035) {
     let ss = parametric_curve.get_surface_spanning_vector_at_point(starting_u);
     let raw_parametric_function = parametric_curve.raw_parametric_function;
@@ -320,15 +434,27 @@ export function get_curve_exp_x_points(parametric_curve, starting_u, da, segment
     return out;
 }
 
+/**
+ * A simple parametric curve representing a straight line.
+ * Inherits from ParametricCurveBaseClass.
+ */
 export class ParametricCurveLineTest extends ParametricCurveBaseClass {
     constructor() {
         super();
     }
 
+    /**
+     * Returns the ratio between world distance and parametric distance.
+     * @returns {number} The ratio between world distance and parametric distance.
+     */
     get_world_dis_to_parametric_dis_ratio() {
         return 1.0;
     }
 
+    /**
+     * Returns the raw parametric function for the line.
+     * @returns {Function} A function that takes a parameter `u` and returns a point [x, y, z] on the line.
+     */
     get_raw_parametric_function() {
         return u => {
             let start_point = [1,-2,-2.5];
@@ -343,15 +469,27 @@ export class ParametricCurveLineTest extends ParametricCurveBaseClass {
     }
 }
 
+/**
+ * A parametric curve representing a unit circle in 3D space.
+ * Inherits from ParametricCurveBaseClass.
+ */
 export class ParametricCurveUnitCircle extends ParametricCurveBaseClass {
     constructor() {
         super();
     }
 
+    /**
+     * Returns the ratio between world distance and parametric distance.
+     * @returns {number} The ratio between world distance and parametric distance (2π for a unit circle).
+     */
     get_world_dis_to_parametric_dis_ratio() {
         return 2.0*Math.PI;
     }
 
+    /**
+     * Returns the ratio between world distance and parametric distance.
+     * @returns {number} The ratio between world distance and parametric distance (2π for a unit circle).
+     */
     get_raw_parametric_function() {
         return u => {
             u *= Math.PI * 2;

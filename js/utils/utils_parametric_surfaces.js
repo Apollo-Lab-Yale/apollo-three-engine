@@ -23,28 +23,53 @@ import {
     optimization_gradient_descent, optimization_powell,
 } from "./utils_optimization.js";
 
+/**
+ * Base class for creating specific parametric surfaces in 3D space.
+ * This is a template class and should not be instantiated directly.
+ */
 export class ParametricSurfaceBaseClass {
     constructor() {
         if (new.target === ParametricSurfaceBaseClass) {
             throw new Error("ParametricSurfaceBaseClass is a template class and cannot be instantiated directly.");
         }
-
+        /**
+         * Initializes the raw parametric function.
+         * @type {Function}
+         */
         this.raw_parametric_function = this.get_raw_parametric_function();
+        /**
+         * Initializes the raw parametric function in Z-up coordinate system.
+         * @type {Function}
+         */
         this.raw_parametric_function_z_up = this.get_raw_parametric_function_z_up();
     }
 
     // returns a function that takes in two parameters (u and v) that both vary on the range 0-1 and returns a
     // point in space [x, y, z].
+    /**
+     * Abstract method to return a function that represents the parametric surface.
+     * Should be implemented by derived classes.
+     * @abstract
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the surface.
+     */
     get_raw_parametric_function() {
         throw new Error("Method 'get_raw_parametric_function()' must be implemented in the derived class.");
     }
 
+    /**
+     * Converts the Z-up coordinate system to Y-up.
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the surface.
+     */
     get_raw_parametric_function_z_up() {
         return (u, v) => {
             return convert_z_up_array_to_y_up_array(this.raw_parametric_function(u, v));
         }
     }
 
+    /**
+     * Returns a function compatible with Three.js's ParametricGeometry.
+     * @returns {Function} A function that sets a target vector to a point [x, y, z] on the surface.
+     */
     get_three_parametric_function() {
         return (u, v, target) => {
             let point = this.raw_parametric_function_z_up(u, v);
@@ -52,6 +77,14 @@ export class ParametricSurfaceBaseClass {
         }
     }
 
+    /**
+     * Projects a given point onto the surface using optimization techniques.
+     * @param {number[]} point - The 3D point to project onto the surface.
+     * @param {number} starting_u - The initial guess for the parameter `u`.
+     * @param {number} starting_v - The initial guess for the parameter `v`.
+     * @param {number} [max_iter=500] - The maximum number of iterations for the optimization.
+     * @returns {[number, number, number[]]} A tuple `[u, v, point_on_surface]` where `u` and `v` are parameters on the surface and `point_on_surface` is the closest point on the surface.
+     */
     project_onto_surface(point, starting_u, starting_v, max_iter=500) {
         let f = x => {
             let a = this.raw_parametric_function(x[0], x[1]);
@@ -97,6 +130,12 @@ export class ParametricSurfaceBaseClass {
     }
     */
 
+    /**
+     * Rotates a vector onto the surface, optimizing for the closest point on the surface.
+     * @param {number[]} starting_point - The starting point on the surface.
+     * @param {number[]} direction - The direction vector to rotate.
+     * @returns {[number[], number[]]} A tuple `[rotated_vector, new_point]` where `rotated_vector` is the rotated vector and `new_point` is the corresponding point on the surface.
+     */
     rotate_vector_onto_surface(starting_point, direction) {
         let direction_length = frobenius_norm_matrix(direction);
         let normalized_direction = normalized_matrix(direction);
@@ -133,6 +172,12 @@ export class ParametricSurfaceBaseClass {
         return [scaled_new_x, new_point];
     }
 
+    /**
+     * Returns two normalized vectors that span the surface at a given point (u, v).
+     * @param {number} u - The parameter along the surface.
+     * @param {number} v - The parameter along the surface.
+     * @returns {[number[], number[]]} A tuple `[vector_u, vector_v]` where `vector_u` and `vector_v` are the spanning vectors.
+     */
     get_surface_spanning_vectors_at_point(u, v) {
         let uu = u + 0.0001;
         let vv = v + 0.0001;
@@ -147,6 +192,14 @@ export class ParametricSurfaceBaseClass {
         return [a1, a2];
     }
 
+    /**
+     * Returns a tangent vector at a point on the surface in a specified direction.
+     * @param {number} u - The parameter `u` on the surface.
+     * @param {number} v - The parameter `v` on the surface.
+     * @param {number} da - The change in `u` direction.
+     * @param {number} db - The change in `v` direction.
+     * @returns {number[]} The normalized tangent vector at the point.
+     */
     get_tangent_vector_at_point_in_direction(u, v, da, db) {
         let uu = u + 0.000001;
         let vv = v + 0.000001;
@@ -169,12 +222,27 @@ export class ParametricSurfaceBaseClass {
         return normalized_matrix(sub_matrix_matrix(new_point, point));
     }
 
+    /**
+     * Returns the surface normal vector at a given point (u, v).
+     * @param {number} u - The parameter `u` on the surface.
+     * @param {number} v - The parameter `v` on the surface.
+     * @returns {number[]} The normal vector at the point.
+     */
     get_surface_normal_vector_at_point(u, v) {
         let [a1, a2] = this.get_surface_spanning_vectors_at_point(u, v);
 
         return cross_product(a1, a2);
     }
 
+    /**
+     * Spawns a static visualization of the parametric surface in a Three.js scene.
+     * @param {Object} scene - The Three.js scene to add the surface to.
+     * @param {number} [slices=100] - The number of slices in the parametric surface.
+     * @param {number} [stacks=100] - The number of stacks in the parametric surface.
+     * @param {number} [color=0x0000ff] - The color of the surface.
+     * @param {number} [opacity=1.0] - The opacity of the surface.
+     * @returns {Object} The Three.js mesh representing the surface.
+     */
     spawn_static_parametric_surface(scene, slices=100, stacks=100, color=0x0000ff, opacity=1.0) {
         let geometry = new ParametricGeometry(this.get_three_parametric_function(), 200, 200);
 
@@ -189,6 +257,14 @@ export class ParametricSurfaceBaseClass {
         return mesh;
     }
 
+    /**
+     * Draws static curves on the parametric surface in a Three.js scene.
+     * @param {Object} scene - The Three.js scene to add the curves to.
+     * @param {number} [num_us=30] - The number of curves in the `u` direction.
+     * @param {number} [num_vs=30] - The number of curves in the `v` direction.
+     * @param {number} [color=0x555555] - The color of the curves.
+     * @param {number} [opacity=0.3] - The opacity of the curves.
+     */
     draw_static_curves(scene, num_us=30, num_vs=30, color=0x555555, opacity=0.3) {
         let width = 0.002;
         let num_samples_per = 75;
@@ -220,9 +296,25 @@ export class ParametricSurfaceBaseClass {
     }
 }
 
+/**
+ * A class to visualize parametric surfaces using Three.js.
+ */
 export class ParametricSurfaceThreeVisualizer {
+    /**
+     * Creates an instance of ParametricSurfaceThreeVisualizer.
+     * @param {ParametricSurfaceBaseClass} parametric_surface - An instance of a parametric surface.
+     * @param {number} [starting_u=0.5] - Initial value for the `u` parameter.
+     * @param {number} [starting_v=0.5] - Initial value for the `v` parameter.
+     * @param {boolean} [draw_tangent_space=false] - Whether to draw the tangent space vectors.
+     * @param {boolean} [draw_point_plus_tangent_space=false] - Whether to draw both the point and tangent space vectors.
+     * @param {boolean} [uv_sliders=true] - Whether to include sliders for adjusting `u` and `v`.
+     */
     constructor(parametric_surface, starting_u=0.5, starting_v=0.5, draw_tangent_space=false, draw_point_plus_tangent_space= false, uv_sliders=true) {
         this.parametric_surface = parametric_surface;
+        /**
+         * Settings for the visualizer.
+         * @type {Object}
+         */
         this.settings = {
             u: starting_u,
             v: starting_v,
@@ -230,6 +322,10 @@ export class ParametricSurfaceThreeVisualizer {
             draw_point_plus_tangent_space: draw_point_plus_tangent_space,
             tangent_space_vector_length: 0.25
         };
+        /**
+         * GUI for controlling the visualizer.
+         * @type {Object}
+         */
         let gui = get_default_lil_gui();
         if (uv_sliders) {
             gui.add(this.settings, 'u', 0.0000001, 1).name('u');
@@ -241,6 +337,10 @@ export class ParametricSurfaceThreeVisualizer {
         this.gui = gui;
     }
 
+    /**
+     * The main loop function for updating the visualization.
+     * @param {Object} three_engine - The Three.js engine instance.
+     */
     three_loop_function(three_engine) {
         let point = this.parametric_surface.raw_parametric_function(this.settings.u, this.settings.v);
         three_engine.draw_debug_sphere(point, 0.04, 0x00eeff);
@@ -265,7 +365,17 @@ export class ParametricSurfaceThreeVisualizer {
     }
 }
 
+/**
+ * A class that utilizes Lie groups and Lie algebras to manipulate and visualize parametric surfaces.
+ */
 export class ParametricSurfaceLieGroupAndAlgebraUtil {
+    /**
+     * Creates an instance of ParametricSurfaceLieGroupAndAlgebraUtil.
+     * @param {ParametricSurfaceBaseClass} parametric_surface - An instance of a parametric surface.
+     * @param {number} [starting_u=0.1] - Initial value for the `u` parameter.
+     * @param {number} [starting_v=0.1] - Initial value for the `v` parameter.
+     * @param {boolean} [fixed_uv=false] - Whether the `u` and `v` parameters should be fixed.
+     */
     constructor(parametric_surface, starting_u=0.1, starting_v=0.1, fixed_uv = false) {
         this.parametric_surface = parametric_surface;
         this.outdated = true;
@@ -276,6 +386,10 @@ export class ParametricSurfaceLieGroupAndAlgebraUtil {
                 this.exp_x_points = get_surface_exp_x_points(this.parametric_surface, this.settings.starting_u, this.settings.starting_v, this.settings.a, this.settings.b);
             }
         }
+        /**
+         * Settings for the visualizer.
+         * @type {Object}
+         */
         this.settings = {
             starting_u: starting_u,
             starting_v: starting_v,
@@ -284,6 +398,10 @@ export class ParametricSurfaceLieGroupAndAlgebraUtil {
             t:0,
             display_tangent_space: true
         }
+        /**
+         * GUI for controlling the visualizer.
+         * @type {Object}
+         */
         let gui = get_default_lil_gui();
         if(!fixed_uv) {
             gui.add(this.settings, 'starting_u', 0.0000001, 1).name('Starting u').onChange(() => { this.outdated = true })
@@ -297,6 +415,10 @@ export class ParametricSurfaceLieGroupAndAlgebraUtil {
         this.gui = gui;
     }
 
+    /**
+     * The main loop function for updating the visualization.
+     * @param {Object} three_engine - The Three.js engine instance.
+     */
     three_loop_function(three_engine) {
         let origin_point = this.parametric_surface.raw_parametric_function(this.settings.starting_u, this.settings.starting_v);
         three_engine.draw_debug_sphere(origin_point, 0.01, 0x00eeff);
@@ -449,6 +571,15 @@ export function get_surface_exp_x_point3(parametric_surface, a, b, segment_lengt
 }
 */
 
+/**
+ * Generates the points of the exponential map for a given parametric surface and parameter `t`.
+ * @param {ParametricSurfaceBaseClass} parametric_surface - The parametric surface object.
+ * @param {number} t - The interpolation parameter.
+ * @param {number[][]} exp_0_points - The initial exponential points.
+ * @param {number[][]} exp_x_points - The exponential points with parameter `x`.
+ * @param {number} [segment_length=0.035] - The length of each segment.
+ * @returns {number[][]} The list of points representing the exponential map.
+ */
 export function get_surface_exp_tx_points(parametric_surface, t, exp_0_points, exp_x_points, segment_length=0.035) {
     let out = [exp_0_points[0].slice()];
 
@@ -466,6 +597,16 @@ export function get_surface_exp_tx_points(parametric_surface, t, exp_0_points, e
     return out;
 }
 
+/**
+ * Generates the points of the exponential map at a given parameter `x` on the parametric surface.
+ * @param {ParametricSurfaceBaseClass} parametric_surface - The parametric surface object.
+ * @param {number} starting_u - The starting parameter `u`.
+ * @param {number} starting_v - The starting parameter `v`.
+ * @param {number} a - The change in `u` direction.
+ * @param {number} b - The change in `v` direction.
+ * @param {number} [segment_length=0.035] - The length of each segment.
+ * @returns {number[][]} The list of points representing the exponential map at `x`.
+ */
 export function get_surface_exp_x_points(parametric_surface, starting_u, starting_v, a, b, segment_length=0.035) {
     let ss = parametric_surface.get_surface_spanning_vectors_at_point(starting_u, starting_v);
     let raw_parametric_function = parametric_surface.raw_parametric_function;
@@ -555,6 +696,16 @@ export function get_surface_exp_x_points(parametric_surface, starting_u, startin
 }
 */
 
+/**
+ * Generates the points of the exponential map at the initial parameters `u` and `v` on the parametric surface.
+ * @param {ParametricSurfaceBaseClass} parametric_surface - The parametric surface object.
+ * @param {number} starting_u - The starting parameter `u`.
+ * @param {number} starting_v - The starting parameter `v`.
+ * @param {number} a - The change in `u` direction.
+ * @param {number} b - The change in `v` direction.
+ * @param {number} [segment_length=0.035] - The length of each segment.
+ * @returns {number[][]} The list of points representing the exponential map at `u=0`.
+ */
 export function get_surface_exp_0_points(parametric_surface, starting_u, starting_v, a, b, segment_length=0.035) {
     let ss = parametric_surface.get_surface_spanning_vectors_at_point(starting_u, starting_v);
     let raw_parametric_function = parametric_surface.raw_parametric_function;
@@ -580,14 +731,26 @@ export function get_surface_exp_0_points(parametric_surface, starting_u, startin
     return out;
 }
 
+/**
+ * A parametric surface representing a sphere in 3D space.
+ * Inherits from ParametricSurfaceBaseClass.
+ */
 export class ParametricSurfaceSphere extends ParametricSurfaceBaseClass {
     // r1 is distance from center of tube to center of torus
     // r2 is radius of the tube
+    /**
+     * Creates an instance of ParametricSurfaceSphere.
+     * @param {number} [r=1] - The radius of the sphere.
+     */
     constructor(r = 1) {
         super();
         this.r = 1;
     }
 
+    /**
+     * Returns the raw parametric function for the sphere.
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the sphere.
+     */
     get_raw_parametric_function() {
         return (u, v) => {
             u *= Math.PI * 2; // u ranges from 0 to 2π
@@ -602,15 +765,28 @@ export class ParametricSurfaceSphere extends ParametricSurfaceBaseClass {
     }
 }
 
+/**
+ * A parametric surface representing a torus in 3D space.
+ * Inherits from ParametricSurfaceBaseClass.
+ */
 export class ParametricSurfaceTorus extends ParametricSurfaceBaseClass {
     // r1 is distance from center of tube to center of torus
     // r2 is radius of the tube
+    /**
+     * Creates an instance of ParametricSurfaceTorus.
+     * @param {number} [r1=2] - The distance from the center of the tube to the center of the torus.
+     * @param {number} [r2=0.3] - The radius of the tube.
+     */
     constructor(r1 = 2, r2 = 0.3) {
         super();
         this.r1 = r1;
         this.r2 = r2;
     }
 
+    /**
+     * Returns the raw parametric function for the torus.
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the torus.
+     */
     get_raw_parametric_function() {
         return (u, v) => {
             u *= Math.PI * 2; // u ranges from 0 to 2π
@@ -625,13 +801,26 @@ export class ParametricSurfaceTorus extends ParametricSurfaceBaseClass {
     }
 }
 
+/**
+ * A parametric surface representing wave-like patterns in 3D space.
+ * Inherits from ParametricSurfaceBaseClass.
+ */
 export class ParametricSurfaceWaves extends ParametricSurfaceBaseClass {
+    /**
+     * Creates an instance of ParametricSurfaceWaves.
+     * @param {number} [w=15] - Width parameter for the waves.
+     * @param {number} [h=15] - Height parameter for the waves.
+     */
     constructor(w=15, h=15) {
         super();
         this.w = w;
         this.h = h;
     }
 
+    /**
+     * Returns the raw parametric function for the wave surface.
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the wave surface.
+     */
     get_raw_parametric_function() {
         return (u, v) => {
             u -= 0.5;
@@ -650,11 +839,22 @@ export class ParametricSurfaceWaves extends ParametricSurfaceBaseClass {
     }
 }
 
+/**
+ * A parametric surface representing a Möbius strip in 3D space.
+ * Inherits from ParametricSurfaceBaseClass.
+ */
 export class ParametricSurfaceMobiusStrip extends ParametricSurfaceBaseClass {
+    /**
+     * Creates an instance of ParametricSurfaceMobiusStrip.
+     */
     constructor() {
         super();
     }
 
+    /**
+     * Returns the raw parametric function for the Möbius strip.
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the Möbius strip.
+     */
     get_raw_parametric_function() {
         return (u, v) => {
             u -= 0.5;
@@ -672,13 +872,26 @@ export class ParametricSurfaceMobiusStrip extends ParametricSurfaceBaseClass {
     }
 }
 
+/**
+ * A parametric surface representing a Klein bottle in 3D space.
+ * Inherits from ParametricSurfaceBaseClass.
+ */
 export class ParametricSurfaceKleinBottle extends ParametricSurfaceBaseClass {
+    /**
+     * Creates an instance of ParametricSurfaceKleinBottle.
+     * @param {number} [r1=2] - The radius of the tube of the Klein bottle.
+     * @param {number} [r2=0.3] - The radius of the cross-section of the tube.
+     */
     constructor(r1 = 2, r2 = 0.3) {
         super();
         this.R = r1; // Radius of the tube of the Klein bottle
         this.r = r2; // Radius of the cross-section of the tube
     }
 
+    /**
+     * Returns the raw parametric function for the Klein bottle.
+     * @returns {Function} A function that takes parameters `u` and `v` and returns a point [x, y, z] on the Klein bottle.
+     */
     get_raw_parametric_function() {
         return (u, v) => {
             u *= Math.PI * 2; // u ranges from 0 to 2π

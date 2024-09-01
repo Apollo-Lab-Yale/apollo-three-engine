@@ -34,6 +34,12 @@ import {
     draw_decomposed_bounding_sphere,
 } from "./utils_visualize_bounding_volumes.js";
 
+/**
+ * Computes the forward kinematics for a robot given its state.
+ * @param {Object} robot - The robot object containing its links and joints.
+ * @param {Array<number>} state - The state of the robot's joints.
+ * @returns {Array<Array<Array<number>>>} - An array of SE3 transformation matrices for each link.
+ */
 export function forward_kinematics_SE3(robot, state) {
     let num_links = robot.num_links();
 
@@ -111,6 +117,12 @@ export function forward_kinematics_SE3(robot, state) {
     return out;
 }
 
+/**
+ * Computes the forward kinematics for a robot using SO3 matrices and positions.
+ * @param {Object} robot - The robot object containing its links and joints.
+ * @param {Array<number>} state - The state of the robot's joints.
+ * @returns {Array<Array>} - An array of SO3 matrices and positions for each link.
+ */
 export function forward_kinematics_SO3_and_position(robot, state) {
     let num_links = robot.num_links();
 
@@ -190,6 +202,12 @@ export function forward_kinematics_SO3_and_position(robot, state) {
     return out;
 }
 
+/**
+ * Computes forward kinematics for a robot and returns all intermediate poses.
+ * @param {Object} robot - The robot object containing its links and joints.
+ * @param {Array<number>} state - The state of the robot's joints.
+ * @returns {Array<Array<Array>>} - An array of poses at each stage for each link.
+ */
 export function forward_kinematics_SO3_and_position_all(robot, state) {
     let num_links = robot.num_links();
 
@@ -277,11 +295,23 @@ export function forward_kinematics_SO3_and_position_all(robot, state) {
     return [out1, out2, out3];
 }
 
+/**
+ * Sets the robot state.
+ * @param {Object} engine - The Three.js engine instance.
+ * @param {Object} robot - The robot object.
+ * @param {Array<number>} state - The robot state.
+ */
 export function set_robot_state(engine, robot, state) {
     let fk = forward_kinematics_SE3(robot, state);
     set_robot_state_from_SE3_fk_result(engine, robot, fk);
 }
 
+/**
+ * Sets the robot state using SE3 forward kinematics results.
+ * @param {Object} engine - The Three.js engine instance.
+ * @param {Object} robot - The robot object.
+ * @param {Array<Array<Array<number>>>} fk_result - The SE3 forward kinematics result.
+ */
 export function set_robot_state_from_SE3_fk_result(engine, robot, fk_result) {
     for(let i=0; i<fk_result.length; i++) {
         robot.set_link_mesh_pose_from_SE3_matrix(engine, i, fk_result[i]);
@@ -289,12 +319,26 @@ export function set_robot_state_from_SE3_fk_result(engine, robot, fk_result) {
     }
 }
 
+/**
+ * Sets the robot state using SO3 and position forward kinematics results.
+ * @param {Object} engine - The Three.js engine instance.
+ * @param {Object} robot - The robot object.
+ * @param {Array<Array>} fk_result - The SO3 and position forward kinematics result.
+ */
 export function set_robot_state_from_SO3_and_position_fk_result(engine, robot, fk_result) {
     for(let i=0; i<fk_result.length; i++) {
         robot.set_link_mesh_pose_from_SO3_matrix_and_position(engine, i, fk_result[i][0], fk_result[i][1]);
     }
 }
 
+/**
+ * Solves the inverse kinematics problem using SO3 matrices and positions.
+ * @param {Object} robot - The robot object.
+ * @param {Array<number>} init_state - The initial state of the robot.
+ * @param {Array<Object>} ik_goals - The inverse kinematics goals.
+ * @param {number} [max_iter=100] - The maximum number of iterations.
+ * @returns {Array<number>} - The solved state of the robot.
+ */
 export function inverse_kinematics_SO3_and_position(robot, init_state, ik_goals, max_iter = 100) {
     let f = x => {
         let fk_res = forward_kinematics_SO3_and_position(robot, x);
@@ -338,6 +382,15 @@ export function inverse_kinematics_SO3_and_position(robot, init_state, ik_goals,
     return optimization_powell(f, init_state, max_iter);
 }
 
+/**
+ * Optimizes the robot's kinematic state to achieve specified goals.
+ * @param {Object} robot - The robot object.
+ * @param {Array<number>} init_state - The initial state of the robot.
+ * @param {Array<Object>} goals - The optimization goals.
+ * @param {number} max_iter - The maximum number of iterations.
+ * @param {string} [solver='bfgs'] - The optimization solver to use.
+ * @returns {Array<number>} - The optimized state of the robot.
+ */
 export function robot_kinematic_opt(robot, init_state, goals, max_iter, solver='bfgs') {
     let f = x => {
         let fk_res = forward_kinematics_SO3_and_position(robot, x);
@@ -412,6 +465,12 @@ export function robot_kinematic_opt(robot, init_state, goals, max_iter, solver='
 }
 
 export class OptGoalSpecPoseMatch {
+    /**
+     * Creates an optimization goal for matching a pose.
+     * @param {Array} goal_pose - The desired pose.
+     * @param {number} link_idx - The index of the link to match.
+     * @param {number} [weight=1.0] - The weight of the goal.
+     */
     constructor(link_idx, weight=1.0) {
         this.mode_string = 'pose_match'
         this.link_idx = link_idx;
@@ -419,6 +478,9 @@ export class OptGoalSpecPoseMatch {
     }
 }
 
+/**
+ * Class representing an optimization goal for matching a pose.
+ */
 export class OptGoalPoseMatch {
     constructor(goal_pose, link_idx, weight=1.0) {
         this.goal_pose = goal_pose;
@@ -509,7 +571,23 @@ export class IKGoal {
     }
 }
 
+/**
+ * Class representing a robot visualizer for forward kinematics with sliders.
+ */
 export class RobotFKSlidersVisualizer {
+    /**
+     * Creates a visualizer for robot forward kinematics.
+     * @param {Object} robot - The robot object.
+     * @param {boolean} [init_display_mesh=true] - Whether to display the mesh initially.
+     * @param {boolean} [init_display_wireframe=false] - Whether to display the wireframe initially.
+     * @param {boolean} [init_display_link_mesh_only_with_frame=false] - Whether to display the link mesh only with the frame initially.
+     * @param {boolean} [init_all_links_selected=false] - Whether to select all links initially.
+     * @param {boolean} [freeze_display_mesh=false] - Whether to freeze the display mesh option.
+     * @param {boolean} [freeze_display_wireframe=false] - Whether to freeze the display wireframe option.
+     * @param {boolean} [freeze_display_link_mesh_only_with_frame=false] - Whether to freeze the display link mesh only with the frame option.
+     * @param {boolean} [freeze_dof_sliders=false] - Whether to freeze the DOF sliders.
+     * @param {boolean} [interpolator=false] - Whether to enable interpolation.
+     */
     constructor(robot,
                 init_display_mesh=true,
                 init_display_wireframe=false,
@@ -804,6 +882,10 @@ export class RobotFKSlidersVisualizer {
 
     }
 
+    /**
+     * Updates the robot state and visual elements based on the current settings.
+     * @param {Object} three_engine - The Three.js engine instance.
+     */
     three_loop_function(three_engine) {
 
         // Added to implment choosing which mesh files to use
@@ -941,7 +1023,28 @@ export class RobotFKSlidersVisualizer {
     }
 }
 
+/**
+ * Class representing a robot visualizer with optimization capabilities.
+ */
 export class RobotOptVisualizer {
+    /**
+     * Creates a visualizer for robot kinematic optimization.
+     * @param {Object} three_engine - The Three.js engine instance.
+     * @param {Object} robot - The robot object.
+     * @param {Array<number>} init_state - The initial state of the robot.
+     * @param {Array<Object>} goal_specs - The optimization goal specifications.
+     * @param {boolean} [init_display_mesh=true] - Whether to display the mesh initially.
+     * @param {boolean} [init_display_wireframe=false] - Whether to display the wireframe initially.
+     * @param {boolean} [init_display_link_mesh_only_with_frame=false] - Whether to display the link mesh only with the frame initially.
+     * @param {boolean} [init_all_links_selected=false] - Whether to select all links initially.
+     * @param {boolean} [init_continuous_solves=true] - Whether to continuously solve the optimization problem.
+     * @param {boolean} [freeze_display_mesh=false] - Whether to freeze the display mesh option.
+     * @param {boolean} [freeze_display_wireframe=false] - Whether to freeze the display wireframe option.
+     * @param {boolean} [freeze_display_link_mesh_only_with_frame=false] - Whether to freeze the display link mesh only with the frame option.
+     * @param {boolean} [freeze_continuous_solves=false] - Whether to freeze the continuous solves option.
+     * @param {boolean} [disable_solve=false] - Whether to disable solving the optimization problem.
+     * @param {string} [solver='bfgs'] - The optimization solver to use.
+     */
     constructor(three_engine,
                 robot,
                 init_state,
@@ -1105,6 +1208,11 @@ export class RobotOptVisualizer {
         this.gui = gui;
     }
 
+    /**
+     * Updates the robot state and visual elements, and solves the optimization problem if necessary.
+     * @param {Object} three_engine - The Three.js engine instance.
+     * @param {number} [max_iter=100] - The maximum number of iterations for the solver.
+     */
     three_loop_function(three_engine, max_iter=100) {
         // let now = three_engine.get_time_elapsed();
         // let solve_now = now > this.time_of_next_scheduled_solve;

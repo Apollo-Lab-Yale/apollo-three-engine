@@ -6,18 +6,43 @@
 import {get_default_lil_gui, refresh_displays} from "./utils_three.js";
 import {add_matrix_matrix, mul_matrix_matrix} from "./utils_math.js";
 
+/**
+ * Returns the SO(3) rotation matrix for a rotation around the x-axis.
+ *
+ * @param {number} theta - The rotation angle in radians.
+ * @returns {Array<Array<number>>} - The rotation matrix.
+ */
 export function get_x_rotation_so3_matrix(theta) {
     return [[1, 0, 0], [0, Math.cos(theta), -Math.sin(theta)], [0, Math.sin(theta), Math.cos(theta)]];
 }
 
+/**
+ * Returns the SO(3) rotation matrix for a rotation around the y-axis.
+ *
+ * @param {number} theta - The rotation angle in radians.
+ * @returns {Array<Array<number>>} - The rotation matrix.
+ */
 export function get_y_rotation_so3_matrix(theta) {
     return [[Math.cos(theta), 0, Math.sin(theta)], [0, 1, 0], [-Math.sin(theta), 0, Math.cos(theta)]];
 }
 
+/**
+ * Returns the SO(3) rotation matrix for a rotation around the z-axis.
+ *
+ * @param {number} theta - The rotation angle in radians.
+ * @returns {Array<Array<number>>} - The rotation matrix.
+ */
 export function get_z_rotation_so3_matrix(theta) {
     return [[Math.cos(theta), -Math.sin(theta), 0], [Math.sin(theta), Math.cos(theta), 0], [0,0,1]];
 }
 
+/**
+ * Returns the SO(3) rotation matrix for a given axis and angle.
+ *
+ * @param {string} axis_string - The axis of rotation ('x', 'y', or 'z').
+ * @param {number} theta - The rotation angle in radians.
+ * @returns {Array<Array<number>>} - The rotation matrix.
+ */
 export function get_rotation_so3_matrix(axis_string, theta) {
     if(axis_string === 'x') {
         return get_x_rotation_so3_matrix(theta);
@@ -28,6 +53,15 @@ export function get_rotation_so3_matrix(axis_string, theta) {
     }
 }
 
+/**
+ * Draws the intermediate coordinate frame for Euler angles.
+ *
+ * @param {Object} engine - The rendering engine.
+ * @param {Array<Array<number>>} offset_position - The offset position for the coordinate frame.
+ * @param {Array<Array<number>>} matrix - The rotation matrix.
+ * @param {number} [length=1] - The length of the coordinate axes.
+ * @param {number} [tail_width=0.04] - The width of the coordinate axes.
+ */
 function draw_euler_angle_intermediate_coordinate_frame(engine, offset_position, matrix, length=1, tail_width=0.04) {
     let x = [[length], [0], [0]];
     let y = [[0], [length], [0]];
@@ -46,7 +80,16 @@ function draw_euler_angle_intermediate_coordinate_frame(engine, offset_position,
     engine.draw_debug_vector(offset_position, mapped_z_t, tail_width, undefined, 0x2222ff);
 }
 
+/**
+ * Visualizes the Euler angles using a 3D engine.
+ */
 export class EulerAnglesVisualizer {
+    /**
+     * Creates an instance of EulerAnglesVisualizer.
+     *
+     * @param {Object} engine - The rendering engine.
+     * @param {boolean} [order_active=true] - Whether the rotation order is active and modifiable.
+     */
     constructor(engine, order_active=true) {
         engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
 
@@ -108,6 +151,11 @@ export class EulerAnglesVisualizer {
         this.wireframe_points = engine.get_local_vertex_positions_of_mesh_object_wireframe(0);
     }
 
+    /**
+     * The main loop function for updating the visualization.
+     *
+     * @param {Object} engine - The rendering engine.
+     */
     three_loop_function(engine) {
         let order = this.settings.order;
 
@@ -144,7 +192,16 @@ export class EulerAnglesVisualizer {
     }
 }
 
+/**
+ * Visualizes the interpolation between two sets of Euler angles using a 3D engine.
+ */
 export class EulerAngleInterpolatorVisualizer {
+    /**
+     * Creates an instance of EulerAngleInterpolatorVisualizer.
+     *
+     * @param {Object} engine - The rendering engine.
+     * @param {boolean} [order_active=true] - Whether the rotation order is active and modifiable.
+     */
     constructor(engine, order_active=true) {
         engine.add_suzanne_monkey_as_mesh_object(0xeeff00);
         engine.add_suzanne_monkey_as_mesh_object(0x00eeff);
@@ -259,6 +316,11 @@ export class EulerAngleInterpolatorVisualizer {
         this.wireframe_points2 = engine.get_local_vertex_positions_of_mesh_object_wireframe(2);
     }
 
+    /**
+     * The main loop function for updating the visualization.
+     *
+     * @param {Object} engine - The rendering engine.
+     */
     three_loop_function(engine) {
         if(this.settings.play) {
             this.settings.t += 0.005;

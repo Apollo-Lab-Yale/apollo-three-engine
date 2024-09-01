@@ -3,6 +3,12 @@
  * Description: For CPSC-487-587 3D Spatial Modeling and Computing at Yale University
  */
 
+/**
+ * Shuffles the indices of the input array.
+ *
+ * @param {Array} array - The array whose indices are to be shuffled.
+ * @returns {Array<number>} - The shuffled indices of the array.
+ */
 function shuffleIndicesOf (array) {
     var idx = [];
     for (var i = 0; i < array.length; i++) {
@@ -17,6 +23,14 @@ function shuffleIndicesOf (array) {
     return idx;
 };
 
+/**
+ * Minimizes a function using the Powell method.
+ *
+ * @param {function} fnc - The function to minimize.
+ * @param {Array<number>} x0 - The initial guess for the function's argument.
+ * @param {number} [max_iter=100] - The maximum number of iterations.
+ * @returns {Object} - An object containing the minimized argument and function value.
+ */
 export function minimize_Powell(fnc, x0, max_iter=100) {
     var eps = 1e-2;
 
@@ -67,6 +81,14 @@ export function minimize_Powell(fnc, x0, max_iter=100) {
     return solution;
 }
 
+/**
+ * Performs an element-wise addition of a vector scaled by a constant to another vector.
+ *
+ * @param {Array<number>} x - The original vector.
+ * @param {number} a - The scaling factor.
+ * @param {Array<number>} g - The vector to be scaled and added.
+ * @returns {Array<number>} - The resulting vector after the operation.
+ */
 function vect_x_pluseq_ag (x, a, g) {
     for (var i = 0; i < x.length; i++) {
         x[i] = x[i] + a * g[i];
@@ -76,6 +98,13 @@ function vect_x_pluseq_ag (x, a, g) {
 
 }
 
+/**
+ * Checks if the maximum absolute value of the elements in a vector is less than a specified epsilon.
+ *
+ * @param {Array<number>} x - The vector to check.
+ * @param {number} eps - The epsilon threshold.
+ * @returns {boolean} - True if the maximum absolute value is less than epsilon, false otherwise.
+ */
 function vect_max_abs_x_less_eps (x, eps) {
     // this procedure is used for stopping criterion check
     for (var i = 0; i < x.length; i++) {
@@ -86,6 +115,13 @@ function vect_max_abs_x_less_eps (x, eps) {
     return true;
 }
 
+/**
+ * Subtracts one vector from another element-wise.
+ *
+ * @param {Array<number>} a - The vector to subtract from.
+ * @param {Array<number>} b - The vector to subtract.
+ * @returns {Array<number>} - The resulting vector after subtraction.
+ */
 function vect_a_minus_b (a, b) {
     var result = new Array(a.length);
     for (var i = 0; i < a.length; i++) {
@@ -95,6 +131,13 @@ function vect_a_minus_b (a, b) {
 
 }
 
+/**
+ * Calculates the dot product of two vectors.
+ *
+ * @param {Array<number>} a - The first vector.
+ * @param {Array<number>} b - The second vector.
+ * @returns {number} - The dot product of the two vectors.
+ */
 function dot (a, b) {
     var result = 0;
     for (var i = 0; i < a.length; i++) {
@@ -104,6 +147,15 @@ function dot (a, b) {
 
 }
 
+/**
+ * Minimizes a function using Gradient Descent.
+ *
+ * @param {function} fnc - The function to minimize.
+ * @param {function} grd - The gradient of the function.
+ * @param {Array<number>} x0 - The initial guess for the function's argument.
+ * @param {number} [max_iter=100] - The maximum number of iterations.
+ * @returns {Object} - An object containing the minimized argument and function value.
+ */
 export function minimize_GradientDescent (fnc, grd, x0, max_iter=100) {
     var x = x0.slice();
 
@@ -144,6 +196,15 @@ export function minimize_GradientDescent (fnc, grd, x0, max_iter=100) {
     return solution;
 }
 
+/**
+ * Minimizes a function using the Limited-memory Broyden–Fletcher–Goldfarb–Shanno (L-BFGS) method.
+ *
+ * @param {function} fnc - The function to minimize.
+ * @param {function} grd - The gradient of the function.
+ * @param {Array<number>} x0 - The initial guess for the function's argument.
+ * @param {number} [max_iter=100] - The maximum number of iterations.
+ * @returns {Object} - An object containing the minimized argument and function value.
+ */
 export function minimize_L_BFGS(fnc, grd, x0, max_iter=100) {
     var x = x0.slice();
 

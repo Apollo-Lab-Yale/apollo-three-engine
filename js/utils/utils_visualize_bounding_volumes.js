@@ -3,6 +3,15 @@ import * as THREE from 'three';
 
 //////////////////////////////////////////////////////////////////
 // For decomposed bounding sphere
+
+/**
+ * Retrieves the radius of a decomposed bounding sphere from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the bounding sphere group.
+ * @param {number} j - The index within the bounding sphere group.
+ * @returns {number} - The radius of the decomposed bounding sphere, or 0 if not found.
+ */
 export function get_decomposed_bounding_sphere_radius(boundingConfig, i, j) {
     if (boundingConfig.decomposition_bounding_spheres && boundingConfig.decomposition_bounding_spheres[i] && boundingConfig.decomposition_bounding_spheres[i][j]) {
         return boundingConfig.decomposition_bounding_spheres[i][j].radius;
@@ -11,6 +20,14 @@ export function get_decomposed_bounding_sphere_radius(boundingConfig, i, j) {
     }
 }
 
+/**
+ * Retrieves the offset of a decomposed bounding sphere from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the bounding sphere group.
+ * @param {number} j - The index within the bounding sphere group.
+ * @returns {Array<number>} - The offset as an [x, y, z] array, or [0, 0, 0] if not found.
+ */
 export function get_decomposed_bounding_sphere_offset(boundingConfig, i, j) {
     if (boundingConfig.decomposition_bounding_spheres && boundingConfig.decomposition_bounding_spheres[i] && boundingConfig.decomposition_bounding_spheres[i][j]) {
         return boundingConfig.decomposition_bounding_spheres[i][j].offset_xyz;
@@ -21,6 +38,14 @@ export function get_decomposed_bounding_sphere_offset(boundingConfig, i, j) {
 
 //////////////////////////////////////////////////////////////////
 // For full bounding sphere
+
+/**
+ * Retrieves the radius of a full bounding sphere from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the bounding sphere.
+ * @returns {number} - The radius of the full bounding sphere, or 0 if not found.
+ */
 export function get_bounding_sphere_radius(boundingConfig, i) {
     if (boundingConfig.full_bounding_spheres && boundingConfig.full_bounding_spheres[i]) {
         return boundingConfig.full_bounding_spheres[i].radius;
@@ -29,6 +54,14 @@ export function get_bounding_sphere_radius(boundingConfig, i) {
     }
 }
 
+
+/**
+ * Retrieves the offset of a full bounding sphere from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the bounding sphere.
+ * @returns {Array<number>} - The offset as an [x, y, z] array, or [0, 0, 0] if not found.
+ */
 export function get_bounding_sphere_offset(boundingConfig, i) {
     if (boundingConfig.full_bounding_spheres && boundingConfig.full_bounding_spheres[i]) {
         return boundingConfig.full_bounding_spheres[i].offset_xyz;
@@ -40,6 +73,14 @@ export function get_bounding_sphere_offset(boundingConfig, i) {
 
 //////////////////////////////////////////////////////////////////
 // For full obbs
+
+/**
+ * Retrieves the half extents of a full OBB (oriented bounding box) from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB.
+ * @returns {Array<number>} - The half extents as an [x, y, z] array, or [0, 0, 0] if not found.
+ */
 export function get_obb_half_extents(boundingConfig, i) {
     if (boundingConfig.full_obbs && boundingConfig.full_obbs[i]) {
         return boundingConfig.full_obbs[i].half_extents;
@@ -48,6 +89,14 @@ export function get_obb_half_extents(boundingConfig, i) {
     }
 }
 
+
+/**
+ * Retrieves the RPY (roll, pitch, yaw) offset of a full OBB from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB.
+ * @returns {Array<number>} - The RPY offset as an [r, p, y] array, or [0, 0, 0] if not found.
+ */
 export function get_obb_RPY(boundingConfig, i) {
     if (boundingConfig.full_obbs && boundingConfig.full_obbs[i]) {
         return boundingConfig.full_obbs[i].offset_rpy;
@@ -56,6 +105,13 @@ export function get_obb_RPY(boundingConfig, i) {
     }
 }
 
+/**
+ * Retrieves the position offset of a full OBB from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB.
+ * @returns {Array<number>} - The offset as an [x, y, z] array, or [0, 0, 0] if not found.
+ */
 export function get_obb_offset(boundingConfig, i) {
     if (boundingConfig.full_obbs && boundingConfig.full_obbs[i]) {
         return boundingConfig.full_obbs[i].offset_xyz;
@@ -66,6 +122,15 @@ export function get_obb_offset(boundingConfig, i) {
 
 //////////////////////////////////////////////////////////////////
 // For decomposition obbs
+
+/**
+ * Retrieves the half extents of a decomposed OBB from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB group.
+ * @param {number} j - The index within the OBB group.
+ * @returns {Array<number>} - The half extents as an [x, y, z] array, or [0, 0, 0] if not found.
+ */
 export function get_decomposition_obb_half_extents(boundingConfig, i, j) {
     if (boundingConfig.decomposition_obbs && boundingConfig.decomposition_obbs[i] && boundingConfig.decomposition_obbs[i][j]) {
         return boundingConfig.decomposition_obbs[i][j].half_extents;
@@ -74,6 +139,14 @@ export function get_decomposition_obb_half_extents(boundingConfig, i, j) {
     }
 }
 
+/**
+ * Retrieves the RPY (roll, pitch, yaw) offset of a decomposed OBB from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB group.
+ * @param {number} j - The index within the OBB group.
+ * @returns {Array<number>} - The RPY offset as an [r, p, y] array, or [0, 0, 0] if not found.
+ */
 export function get_decomposition_obb_RPY(boundingConfig, i, j) {
     if (boundingConfig.decomposition_obbs && boundingConfig.decomposition_obbs[i] && boundingConfig.decomposition_obbs[i][j]) {
         return boundingConfig.decomposition_obbs[i][j].offset_rpy;
@@ -82,6 +155,14 @@ export function get_decomposition_obb_RPY(boundingConfig, i, j) {
     }
 }
 
+/**
+ * Retrieves the position offset of a decomposed OBB from the bounding configuration.
+ *
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB group.
+ * @param {number} j - The index within the OBB group.
+ * @returns {Array<number>} - The offset as an [x, y, z] array, or [0, 0, 0] if not found.
+ */
 export function get_decomposition_obb_offset(boundingConfig, i, j) {
     if (boundingConfig.decomposition_obbs && boundingConfig.decomposition_obbs[i] && boundingConfig.decomposition_obbs[i][j]) {
         return boundingConfig.decomposition_obbs[i][j].offset_xyz;
@@ -91,6 +172,12 @@ export function get_decomposition_obb_offset(boundingConfig, i, j) {
 }
 //////////////////////////////////////////////////////////////////
 
+/**
+ * Converts a rotation matrix to a quaternion.
+ *
+ * @param {Array<Array<number>>} R - The 3x3 rotation matrix.
+ * @returns {THREE.Quaternion} - The resulting quaternion.
+ */
 function matrix_to_quaternion(R) {
     let flat_matrix = [
         R[0][0], R[0][1], R[0][2],
@@ -113,6 +200,13 @@ function matrix_to_quaternion(R) {
     return quaternion;
 }
 
+/**
+ * Applies a global rotation to a THREE.js box object around a specified axis and angle.
+ *
+ * @param {THREE.Object3D} box - The THREE.js object to rotate.
+ * @param {THREE.Vector3} axis - The axis of rotation.
+ * @param {number} angle - The angle of rotation in radians.
+ */
 function apply_global_rotation(box, axis, angle) {
     const quaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
 
@@ -128,6 +222,15 @@ function apply_global_rotation(box, axis, angle) {
     box.applyQuaternion(quaternion);
 }
 
+/**
+ * Draws an oriented bounding box (OBB) using the provided engine and bounding configuration.
+ *
+ * @param {Object} engine - The rendering engine.
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB in the configuration.
+ * @param {Array<Array<number>>} R - The rotation matrix.
+ * @param {Array<Array<number>>} t - The translation vector.
+ */
 export function draw_obb(engine, boundingConfig, i, R, t) {
     let half_extents = get_obb_half_extents(boundingConfig, i);
     let offset_rpy = get_obb_RPY(boundingConfig, i);
@@ -148,6 +251,16 @@ export function draw_obb(engine, boundingConfig, i, R, t) {
     apply_global_rotation(box, new THREE.Vector3(1, 0, 0), - Math.PI / 2);
 }
 
+/**
+ * Draws a decomposed oriented bounding box (OBB) using the provided engine and bounding configuration.
+ *
+ * @param {Object} engine - The rendering engine.
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the OBB group in the configuration.
+ * @param {number} j - The index within the OBB group.
+ * @param {Array<Array<number>>} R - The rotation matrix.
+ * @param {Array<Array<number>>} t - The translation vector.
+ */
 export function draw_decomposed_obb(engine, boundingConfig, i, j, R, t) {
     let half_extents = get_decomposition_obb_half_extents(boundingConfig, i, j);
     let offset_rpy = get_decomposition_obb_RPY(boundingConfig, i, j);
@@ -168,6 +281,15 @@ export function draw_decomposed_obb(engine, boundingConfig, i, j, R, t) {
     apply_global_rotation(box, new THREE.Vector3(1, 0, 0), - Math.PI / 2);
 }
 
+/**
+ * Draws a bounding sphere using the provided engine and bounding configuration.
+ *
+ * @param {Object} engine - The rendering engine.
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the bounding sphere in the configuration.
+ * @param {Array<Array<number>>} R - The rotation matrix.
+ * @param {Array<Array<number>>} t - The translation vector.
+ */
 export function draw_bounding_sphere(engine, boundingConfig, i, R, t) {
     let offset_xyz = get_bounding_sphere_offset(boundingConfig, i);
     let radius = get_bounding_sphere_radius(boundingConfig, i);
@@ -182,6 +304,16 @@ export function draw_bounding_sphere(engine, boundingConfig, i, R, t) {
     );
 }
 
+/**
+ * Draws a decomposed bounding sphere using the provided engine and bounding configuration.
+ *
+ * @param {Object} engine - The rendering engine.
+ * @param {Object} boundingConfig - The bounding configuration object.
+ * @param {number} i - The index of the bounding sphere group in the configuration.
+ * @param {number} j - The index within the bounding sphere group.
+ * @param {Array<Array<number>>} R - The rotation matrix.
+ * @param {Array<Array<number>>} t - The translation vector.
+ */
 export function draw_decomposed_bounding_sphere(engine, boundingConfig, i, j, R, t) {
     let offset_xyz = get_decomposed_bounding_sphere_offset(boundingConfig, i, j);
     let radius = get_decomposed_bounding_sphere_radius(boundingConfig, i, j);
