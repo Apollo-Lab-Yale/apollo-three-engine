@@ -869,9 +869,9 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                 return new RobotLink(
                     link.name,
                     link.link_idx,
-                    link.parent_link_idx,
-                    link.children_joint_idxs,
                     link.parent_joint_idx,
+                    link.children_joint_idxs,
+                    link.parent_link_idx,
                     link.children_link_idxs,
                 );
             } else {
