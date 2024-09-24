@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CPSC 487/587</title>
+    <script src="../../js/setup/setup_mathjax.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.3.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quaternion@1.5.1/quaternion.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/numeric@1.2.6/numeric-1.2.6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/": "https://unpkg.com/three@0.160.0/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import {get_default_lil_gui, ThreeEngine} from "../../js/utils/utils_three.js";
+    import {spawn_quadrilateral_base} from "../../js/utils/utils_three.js";
+    import {set_quadrilateral_specific} from "../../js/utils/utils_three.js";
+
+    let engine = ThreeEngine.new_default_3d();
+
+    let settings = {
+        a: 1
+    }
+
+    let gui = get_default_lil_gui();
+
+    // let q = spawn_quadrilateral_base(engine.scene, [0.,0.,0.], [1.,1.,1.], [-1.,2.,-4.], [-1,-1,0.1], undefined, 0.2)
+    // set_quadrilateral_specific(q, [0.,0.,0.], [10.,1.,1.], [-1.,2.,-4.], [-1,-1,0.1], undefined, 1.0)
+
+    engine.animation_loop(function() {
+        // engine.draw_debug_triangle([0,0], [1,0], [1,1], undefined, 0.6);
+        engine.draw_debug_bivector([1,1,0], [0,1,1], undefined, 0.5)
+    });
+
+</script>
+</body>
+</html>

@@ -56,6 +56,8 @@ export class ThreeEngine {
         this.num_cone_objects_used_on_curr_frame = 0;
         this.plane_objects = [];
         this.num_plane_objects_used_on_curr_frame = 0;
+        this.quadrilateral_objects = [];
+        this.num_quadrilateral_objects_used_on_curr_frame = 0;
         this.gizmo_controller_objects = [];
         this.gizmo_controllers = [];
         this.frame_idx = 0;
@@ -648,6 +650,151 @@ export class ThreeEngine {
     }
 
     /**
+     * Draws a quadrilateral for debugging purposes by reusing or spawning new quadrilateral objects.
+     * If there aren't enough quadrilateral objects available, it spawns more.
+     * Converts 2D points to 3D with Z-up to Y-up coordinate transformation and updates the quadrilateral object.
+     *
+     * @param {Array} point1 - First point of the quadrilateral, represented as a 2D or 3D array.
+     * @param {Array} point2 - Second point of the quadrilateral, represented as a 2D or 3D array.
+     * @param {Array} point3 - Third point of the quadrilateral, represented as a 2D or 3D array.
+     * @param {Array} point4 - Fourth point of the quadrilateral, represented as a 2D or 3D array.
+     * @param {Number} color - The color of the quadrilateral, default is cyan (0x00ffff).
+     * @param {Number} opacity - The opacity of the quadrilateral, default is 1.0.
+     */
+    draw_debug_quadrilateral(point1, point2, point3, point4, color=0x00ffff, opacity=1.0) {
+        if (this.num_quadrilateral_objects_used_on_curr_frame >= this.quadrilateral_objects.length) {
+            for (let i = 0; i < 500; i++) {
+                let quad_object = spawn_quadrilateral_default(this.scene, color, opacity);
+                quad_object.visible = false;
+                this.quadrilateral_objects.push(quad_object);
+            }
+        }
+
+        point1 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point1))
+        point2 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point2))
+        point3 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point3))
+        point4 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point4))
+
+        let quad_object = this.quadrilateral_objects[this.num_quadrilateral_objects_used_on_curr_frame];
+        set_quadrilateral_specific(quad_object, point1, point2, point3, point4, color, opacity);
+        this.num_quadrilateral_objects_used_on_curr_frame++;
+    }
+
+    /**
+     * Draws a triangle for debugging purposes by using a quadrilateral object and reusing or spawning new objects.
+     * If there aren't enough quadrilateral objects available, it spawns more.
+     * Converts 2D points to 3D with Z-up to Y-up coordinate transformation and sets the points for the triangle.
+     *
+     * @param {Array} point1 - First point of the triangle, represented as a 2D or 3D array.
+     * @param {Array} point2 - Second point of the triangle, represented as a 2D or 3D array.
+     * @param {Array} point3 - Third point of the triangle, represented as a 2D or 3D array.
+     * @param {Number} color - The color of the triangle, default is cyan (0x00ffff).
+     * @param {Number} opacity - The opacity of the triangle, default is 1.0.
+     */
+    draw_debug_triangle(point1, point2, point3, color=0x00ffff, opacity=1.0) {
+        if (this.num_quadrilateral_objects_used_on_curr_frame >= this.quadrilateral_objects.length) {
+            for (let i = 0; i < 500; i++) {
+                let quad_object = spawn_quadrilateral_default(this.scene, color, opacity);
+                quad_object.visible = false;
+                this.quadrilateral_objects.push(quad_object);
+            }
+        }
+
+        point1 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point1))
+        point2 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point2))
+        point3 = convert_z_up_array_to_y_up_array(convert_2array_to_3array(point3))
+
+        let quad_object = this.quadrilateral_objects[this.num_quadrilateral_objects_used_on_curr_frame];
+        set_quadrilateral_specific(quad_object, point1, point2, point3, point3, color, opacity);
+        this.num_quadrilateral_objects_used_on_curr_frame++;
+    }
+
+    draw_debug_bivector(vec1, vec2, color=0x00ffff, opacity=1.0) {
+        vec1 = convert_2array_to_3array(vec1)
+        vec2 = convert_2array_to_3array(vec2)
+
+        this.draw_debug_vector([0,0,0], vec1, undefined, undefined, 0x000000, 0.5);
+        this.draw_debug_vector([0,0,0], vec2, undefined, undefined, 0x000000, 0.5);
+        let point1 = [0,0,0];
+        let point2 = vec1
+        let point3 = unroll_matrix_to_list(add_matrix_matrix(vec1, vec2));
+        let point4 = vec2;
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+    }
+
+    draw_debug_trivector(vec1, vec2, vec3, color=0x00ffff, opacity=1.0) {
+        vec1 = convert_2array_to_3array(vec1)
+        vec2 = convert_2array_to_3array(vec2)
+        vec3 = convert_2array_to_3array(vec3)
+
+        this.draw_debug_vector([0,0,0], vec1, undefined, undefined, 0x000000, 0.5);
+        this.draw_debug_vector([0,0,0], vec2, undefined, undefined, 0x000000, 0.5);
+        this.draw_debug_vector([0,0,0], vec3, undefined, undefined, 0x000000, 0.5);
+
+        let point1 = [0,0,0];
+        let point2 = vec1;
+        let point3 = unroll_matrix_to_list(add_matrix_matrix(vec1, vec2));
+        let point4 = vec2;
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+
+        point2 = vec2;
+        point3 = unroll_matrix_to_list(add_matrix_matrix(vec2, vec3));
+        point4 = vec3;
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+
+        point2 = vec3;
+        point3 = unroll_matrix_to_list(add_matrix_matrix(vec3, vec1));
+        point4 = vec1;
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+
+        point1 = vec1;
+        point2 = unroll_matrix_to_list(add_matrix_matrix(vec1, vec2));
+        point3 = unroll_matrix_to_list(add_matrix_matrix(add_matrix_matrix(vec1, vec2), vec3));
+        point4 = unroll_matrix_to_list(add_matrix_matrix(vec1, vec3));
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+
+        point1 = vec2;
+        point2 = unroll_matrix_to_list(add_matrix_matrix(vec2, vec3));
+        point3 = unroll_matrix_to_list(add_matrix_matrix(add_matrix_matrix(vec2, vec3), vec1));
+        point4 = unroll_matrix_to_list(add_matrix_matrix(vec2, vec1));
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+
+        point1 = vec3;
+        point2 = unroll_matrix_to_list(add_matrix_matrix(vec3, vec1));
+        point3 = unroll_matrix_to_list(add_matrix_matrix(add_matrix_matrix(vec3, vec1), vec2));
+        point4 = unroll_matrix_to_list(add_matrix_matrix(vec3, vec2));
+        this.draw_debug_quadrilateral(point1, point2, point3, point4, color, opacity);
+        this.draw_debug_line(point1, point2, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point2, point3, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point3, point4, false, 0.002, 0x00000, 0.5);
+        this.draw_debug_line(point4, point1, false, 0.002, 0x00000, 0.5);
+    }
+
+    /**
      * Draws a debug cone in the scene.
      * @param {Array<number>} start_point - The start point of the cone.
      * @param {Array<number>} end_point - The end point of the cone.
@@ -1061,6 +1208,7 @@ export class ThreeEngine {
             this.num_line_objects_used_on_curr_frame = 0;
             this.num_cone_objects_used_on_curr_frame = 0;
             this.num_plane_objects_used_on_curr_frame = 0;
+            this.num_quadrilateral_objects_used_on_curr_frame = 0;
 
             f();
     
@@ -1080,6 +1228,7 @@ export class ThreeEngine {
             for(let i = 0; i < this.num_line_objects_used_on_curr_frame; i++) {this.line_objects[i].visible = false;}
             for(let i = 0; i < this.num_cone_objects_used_on_curr_frame; i++) {this.cone_objects[i].visible = false;}
             for(let i = 0; i < this.num_plane_objects_used_on_curr_frame; i++) {this.plane_objects[i].visible = false;}
+            for(let i = 0; i < this.num_quadrilateral_objects_used_on_curr_frame; i++) {this.quadrilateral_objects[i].visible = false;}
 
             this.frame_idx++;
 
@@ -1768,6 +1917,93 @@ export function set_plane_specific(plane_specific, center_point, span_vec_1, spa
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Spawns a quadrilateral in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {Array<number>} point1 - The first corner of the quadrilateral.
+ * @param {Array<number>} point2 - The second corner of the quadrilateral.
+ * @param {Array<number>} point3 - The third corner of the quadrilateral.
+ * @param {Array<number>} point4 - The fourth corner of the quadrilateral.
+ * @param {number} [color=0x00ff00] - The color of the quadrilateral.
+ * @param {number} [opacity=1.0] - The opacity of the quadrilateral.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned quadrilateral mesh.
+ */
+export function spawn_quadrilateral_base(scene, point1, point2, point3, point4, color=0x00ff00, opacity=1.0, flat_material=true) {
+    let geometry = new THREE.BufferGeometry();
+
+    const vertices = new Float32Array([
+        ...point1,  // Vertex 1
+        ...point2,  // Vertex 2
+        ...point3,  // Vertex 3
+        ...point4   // Vertex 4
+    ]);
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+    const indices = [0, 1, 2, 2, 3, 0]; // Two triangles to form the quad
+    geometry.setIndex(indices);
+
+    let material;
+    if (flat_material) {
+        material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
+    } else {
+        material = new THREE.MeshStandardMaterial({ color: color, side: THREE.DoubleSide });
+    }
+    const quadrilateral = new THREE.Mesh(geometry, material);
+    quadrilateral.material.transparent = true;
+    quadrilateral.material.opacity = opacity;
+    scene.add(quadrilateral);
+    return quadrilateral;
+}
+
+/**
+ * Spawns a default quadrilateral in the scene.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {number} [color=0x00ff00] - The color of the quadrilateral.
+ * @param {number} [opacity=1.0] - The opacity of the quadrilateral.
+ * @param {boolean} [flat_material=true] - Whether the material is flat.
+ * @returns {THREE.Mesh} The spawned quadrilateral mesh.
+ */
+export function spawn_quadrilateral_default(scene, color=0x00ff00, opacity=1.0, flat_material=true) {
+    const point1 = [-1.0, -1.0, 0.0];
+    const point2 = [1.0, -1.0, 0.0];
+    const point3 = [1.0, 1.0, 0.0];
+    const point4 = [-1.0, 1.0, 0.0];
+    return spawn_quadrilateral_base(scene, point1, point2, point3, point4, color, opacity, flat_material);
+}
+
+/**
+ * Sets the properties of a specific quadrilateral in the scene using four points.
+ * @param {THREE.Mesh} quadrilateral - The quadrilateral mesh object.
+ * @param {Array<number>} point1 - The first corner of the quadrilateral.
+ * @param {Array<number>} point2 - The second corner of the quadrilateral.
+ * @param {Array<number>} point3 - The third corner of the quadrilateral.
+ * @param {Array<number>} point4 - The fourth corner of the quadrilateral.
+ * @param {number} [color=0x00ff00] - The color of the quadrilateral.
+ * @param {number} [opacity=1.0] - The opacity of the quadrilateral.
+ */
+export function set_quadrilateral_specific(quadrilateral, point1, point2, point3, point4, color=0x00ff00, opacity=1.0) {
+    // point1 = convert_y_up_array_to_z_up_array(point1)
+    // point2 = convert_y_up_array_to_z_up_array(point2)
+    // point3 = convert_y_up_array_to_z_up_array(point3)
+    // point4 = convert_y_up_array_to_z_up_array(point4)
+
+    let o = quadrilateral.geometry.attributes.position;
+    o.setXYZ(0, point1[0], point1[1], point1[2]);
+    o.setXYZ(1, point2[0], point2[1], point2[2]);
+    o.setXYZ(2, point3[0], point3[1], point3[2]);
+    o.setXYZ(3, point4[0], point4[1], point4[2]);
+    o.needsUpdate = true;
+
+    quadrilateral.visible = true;
+    quadrilateral.material.color.set(color);
+    quadrilateral.material.transparent = true;
+    quadrilateral.material.opacity = opacity;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
  * Retrieves the local vertex positions of an object.
  * @param {THREE.BufferGeometry} object - The object geometry.
  * @param {THREE.Quaternion} base_quaternion - The base quaternion for rotation.
@@ -2055,7 +2291,7 @@ function get_matrix4_element(matrix, row, column) {
  */
 export function convert_2array_to_3array(array) {
     if(array.length === 3) { return array; }
-    else { return [array[0], array[1], 0.01] }
+    else { return [array[0], array[1], 0.001] }
 }
 
 /**
