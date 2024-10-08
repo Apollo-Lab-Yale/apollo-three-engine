@@ -23,7 +23,7 @@ function get_rpy_SO3_matrix(rpy) {
     let ry = get_y_rotation_so3_matrix(rpy[1]);
     let rz = get_z_rotation_so3_matrix(rpy[2]);
 
-    return mul_matrix_matrix(mul_matrix_matrix(rx, ry), rz);
+    return mul_matrix_matrix(mul_matrix_matrix(rz, ry), rx);
 }
 
 /**
