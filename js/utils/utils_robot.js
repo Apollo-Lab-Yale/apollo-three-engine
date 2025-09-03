@@ -87,6 +87,14 @@ export class RobotJointBaseClass {
         this.xyz_rpy_SE3_matrix = get_xyz_rpy_SE3_matrix(xyz, rpy);
         this.joint_type_string = this.get_joint_type_string();
         this.joint_num_dofs = this.get_joint_num_dofs();
+
+        // store mimic data
+        this.is_mimic = false;
+        this.mimic_joint_name = null;
+        this.mimic_multiplier = 1.0;
+        this.mimic_offset = 0.0;
+        this.mimic_driver_dof_idxs = [];
+
     }
 
     /**
@@ -785,6 +793,8 @@ export class RobotFromPreprocessor extends RobotBaseClass {
             }
             const JointClass = this.get_joint_type(joint_urdf_geometry.joint_type);
 
+            const isMimic = !!joint_urdf_geometry.mimic;
+
             // Handle different constructors based on joint type
             if (joint_urdf_geometry.joint_type === 'Fixed') {
                 return new JointClass(
@@ -819,7 +829,16 @@ export class RobotFromPreprocessor extends RobotBaseClass {
                     joint_urdf_geometry.origin.rpy,
                     dof_idx
                 );
-                dof_idx++;
+                if (isMimic) {
+                    jointInstance.is_mimic = true;
+                    jointInstance.mimic_joint_name = joint_urdf_geometry.mimic.joint;
+                    jointInstance.mimic_multiplier = joint_urdf_geometry.mimic.multiplier ?? 1.0;
+                    jointInstance.mimic_offset = joint_urdf_geometry.mimic.offset ?? 0.0;
+                    jointInstance.joint_num_dofs = 0;
+                    // dof_idx++;
+                } else {
+                    dof_idx++;
+                }
                 return jointInstance;
             } else if (joint_urdf_geometry.joint_type === 'Floating') {
                 const rotation_dof_idxs = [dof_idx, dof_idx + 1, dof_idx + 2];
@@ -1250,7 +1269,7 @@ export class B1Z1Robot extends RobotBaseClass {
         let link39 = new RobotLink('gripperStator', 39, 37, [], 38, [], 'z1_GripperStator.glb');
         let link40 = new RobotLink('gripperMover', 40, 38, [], 39, [], 'z1_GripperMover.glb');
 
-
+th
         return [
             link0, link1, link2,
             link3, link4, link5, link6, link7, link8, link9,

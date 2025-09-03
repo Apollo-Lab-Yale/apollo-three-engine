@@ -41,6 +41,19 @@ import {
  * @returns {Array<Array<Array<number>>>} - An array of SE3 transformation matrices for each link.
  */
 export function forward_kinematics_SE3(robot, state) {
+    const jointByName = Object.fromEntries(robot.joints.map(j => [j.joint_name, j]));
+    function read_q_mimic_aware(joint, state) {
+        if (!joint.is_mimic) return state[joint.dof_idx];
+        let driverIdx = joint.mimic_driver_dof_idxs?.[0];
+        if (driverIdx == null && joint.mimic_joint_name) {
+            const driver = jointByName[joint.mimic_joint_name];
+            if (driver && typeof driver.dof_idx === 'number' && driver.dof_idx >= 0) driverIdx = driver.dof_idx;
+        }
+        const v = (driverIdx != null) ? state[driverIdx] : 0.0;
+        const m = (joint.mimic_multiplier ?? 1.0);
+        const b = (joint.mimic_offset ?? 0.0);
+        return b + m * v;
+    }
     let num_links = robot.num_links();
 
     let out = [];
@@ -67,7 +80,7 @@ export function forward_kinematics_SE3(robot, state) {
             let curr_pose = mul_matrix_matrix(parent_pose, constant_transform);
 
             if(joint_type_string === 'prismatic') {
-                let joint_value = state[joint.dof_idx];
+                let joint_value = read_q_mimic_aware(joint, state);
 
                 let variable_transform = [
                     [1, 0, 0, joint_value*joint.axis[0][0]],
@@ -79,7 +92,7 @@ export function forward_kinematics_SE3(robot, state) {
                 curr_pose = mul_matrix_matrix(curr_pose, variable_transform);
 
             } else if(joint_type_string === 'revolute') {
-                let joint_value = state[joint.dof_idx];
+                let joint_value = read_q_mimic_aware(joint, state);
 
                 let u = joint.axis;
                 let un = normalized_matrix(u);
@@ -222,6 +235,30 @@ export function forward_kinematics_SO3_and_position_all(robot, state) {
 
     let kinematic_hierarchy = robot.kinematic_hierarchy;
 
+    const jointByName = Object.fromEntries(robot.joints.map(j => [j.joint_name, j]));
+    function read_q_mimic_aware(joint, state) {
+        if (!joint.is_mimic) return state[joint.dof_idx];
+
+        // prefer pre-resolved indices if you set them when building joints
+        let driverIdx = joint.mimic_driver_dof_idxs?.[0];
+
+        // fallback: resolve by name
+        if (driverIdx == null && joint.mimic_joint_name) {
+            const driver = jointByName[joint.mimic_joint_name];
+            if (driver && typeof driver.dof_idx === 'number' && driver.dof_idx >= 0) {
+                driverIdx = driver.dof_idx;
+            }
+        }
+        // console.log(joint.mimic_joint_name)
+
+        const v = (driverIdx != null) ? state[driverIdx] : 0.0;
+        const m = (joint.mimic_multiplier != null) ? joint.mimic_multiplier : 1.0;
+        const b = (joint.mimic_offset != null) ? joint.mimic_offset : 0.0;
+
+        // console.log(b+m+v);
+        return b + m * v;
+    }
+
     for(let i = 1; i < kinematic_hierarchy.length; i++) {
         let layer = kinematic_hierarchy[i];
         layer.forEach(link_idx => {
@@ -242,7 +279,8 @@ export function forward_kinematics_SO3_and_position_all(robot, state) {
             out2[link_idx] = curr_pose.slice();
 
             if(joint_type_string === 'prismatic') {
-                let joint_value = state[joint.dof_idx];
+                // let joint_value = state[joint.dof_idx];
+                let joint_value = read_q_mimic_aware(joint, state);
 
                 let variable_transform = [ identity_matrix(3), [ [joint_value*joint.axis[0][0]], [joint_value*joint.axis[1][0]], [joint_value*joint.axis[2][0]] ] ];
                 // curr_pose = mul_matrix_matrix(curr_pose, variable_transform);
@@ -250,7 +288,8 @@ export function forward_kinematics_SO3_and_position_all(robot, state) {
                 curr_pose = map_pose_SO3_and_position(curr_pose, variable_transform);
 
             } else if(joint_type_string === 'revolute') {
-                let joint_value = state[joint.dof_idx];
+                // let joint_value = state[joint.dof_idx];
+                let joint_value = read_q_mimic_aware(joint, state);
 
                 let u = joint.axis;
                 let un = normalized_matrix(u);
